@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>个人信息</title>
+</head>
+<a href="/user">个人页面</a>
+<a href="/houseInfo">房屋总览</a>
+<a href="/about">关于我们</a>
+<a href="/sendHouse">我要卖房</a>
+<a href="/exit">退出</a>
+<body>
+<h1>个人信息</h1>
+<table border="1">
+    <tr>
+        <td>用户id</td>
+        <td>{{.Id}}</td>
+    </tr>
+    <tr>
+        <td>用户名</td>
+        <td>{{.Name}}</td>
+    </tr>
+    <tr>
+        <td>用户邮箱</td>
+        <td>{{.Mail}}</td>
+    </tr>
+    <tr>
+        <td>微信</td>
+        <td>{{.Wechat}}</td>
+    </tr>
+    <tr>
+        <td>手机号</td>
+        <td>{{.PhoneNum}}</td>
+    </tr>
+
+</table>
+
+<form method="post" action="/user">
+    <input type="submit" value="修改个人信息">
+</form>
+</body>
+</html>

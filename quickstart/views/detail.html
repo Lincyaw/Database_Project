@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+    <title>详情</title>
+</head>
+<body>
+<nav>
+    <a href="/user">个人页面</a>
+    <a href="/houseInfo">房屋总览</a>
+    <a href="/about">关于我们</a>
+    <a href="/sendHouse">我要卖房</a>
+    <a href="/exit">退出</a>
+</nav>
+<h1>idx{{.id}}房屋详情</h1>
+
+<table border="1">
+    <tr>
+        <td>拥有者</td>
+        <td>{{.owner}}</td>
+    </tr>
+    <tr>
+        <td>房间面积</td>
+        <td>{{.space}}</td>
+    </tr>
+    <tr>
+        <td>价格</td>
+        <td>{{.price}}</td>
+    </tr>
+    <tr>
+        <td>朝向</td>
+        <td>{{.dir}}</td>
+    </tr>
+    <tr>
+        <td>楼层</td>
+        <td>{{.floor}}</td>
+    </tr>
+    <tr>
+        <td>房龄</td>
+        <td>{{.age}}</td>
+    </tr>
+    <tr>
+        <td>出售紧急程度</td>
+        <td>{{.emergency}}</td>
+    </tr>
+    <tr>
+        <td>房间数</td>
+        <td>{{.rooms}}</td>
+    </tr>
+    <tr>
+        <td>地铁站</td>
+        <td>{{.station}}</td>
+    </tr>
+    <tr>
+        <td>地铁线路</td>
+        <td>{{.line}}</td>
+    </tr>
+    <tr>
+        <td>区域</td>
+        <td>{{.area}}</td>
+    </tr>
+    <tr>
+        <td>产权</td>
+        <td>{{.property}}</td>
+    </tr>
+    <tr>
+        <td>房屋类型</td>
+        <td>{{.type}}</td>
+    </tr>
+    <tr>
+        <td>房屋装修程度</td>
+        <td>{{.decoration}}</td>
+    </tr>
+
+</table>
+
+
+<button type="button" id="favorites">收藏</button>
+
+<button type="button" id="booking">预约看房</button>
+</body>
+</html>
+　　<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script>
+    function getQueryVariable(variable)
+    {
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i=0;i<vars.length;i++) {
+            var pair = vars[i].split("=");
+            if(pair[0] === variable){return pair[1];}
+        }
+        returnfalse;
+    }
+    $(document).ready(function() {
+
+        $("#booking").on("click", function (e) {
+            let id = getQueryVariable("id")
+            let data = {
+                "type": "booking",
+                "houseId": id
+            };
+            $.ajax({
+                url: "/detail/?id=" + id,
+                type: "POST",
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                dataType: "json",
+                // headers: {
+                //     "X-CSRFTOKEN": getCookie("csrf_token"),
+                // },
+            });
+        });
+    })
+</script>

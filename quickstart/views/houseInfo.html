@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+
+    <title>Title</title>
+</head>
+<body>
+<nav>
+    <a href="/user">个人页面</a>
+    <a href="/houseInfo">房屋总览</a>
+    <a href="/about">关于我们</a>
+    <a href="/sendHouse">我要卖房</a>
+    <a href="/exit">退出</a>
+</nav>
+
+<h1>房屋概览</h1>
+
+
+<table border="1">
+    <tr>
+        <td>Id</td>
+        <td>房屋面积</td>
+        <td>房屋价格</td>
+        <td>房屋朝向</td>
+        <td>房屋楼层</td>
+        <td>房屋年龄</td>
+        <td>出售紧急程度</td>
+    </tr>
+    {{range $i,$v := .arr}}
+    <tr>
+        {{range $k,$w := $v}}
+        <td>{{$w}}</td>
+        {{end}}
+        <td>
+            <a href="/detail/?id={{index $v 0}}">详情</a>
+        </td>
+    </tr>
+    {{end}}
+
+
+</table>
+</body>
+</html>

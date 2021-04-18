@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>我要卖房</title>
+</head>
+<body>
+<nav>
+    <a href="/user">个人页面</a>
+    <a href="/houseInfo">房屋总览</a>
+    <a href="/about">关于我们</a>
+    <a href="/sendHouse">我要卖房</a>
+    <a href="/exit">退出</a>
+</nav>
+<h1>我要卖房</h1>
+<form method="post" action="/sendHouse">
+    房屋面积：<input type="number" name="space"> <br>
+    价格：<input type="number" name="price"><br>
+    朝向：<input type="number" name="dir"><br>
+    楼层：<input type="number" name="floor"><br>
+    房间数目：<input type="number" name="rooms"><br>
+    年龄：<input type="number" name="age"><br>
+    紧急程度：<input type="number" name="emergency"><br>
+    地铁站：<input type="text" name="station"><br>
+    地铁线路：<input type="text" name="line"><br>
+    房源区域：<input type="text" name="area"><br>
+    房源属性：<input type="text" name="property"><br>
+    房屋种类：<input type="text" name="type"><br>
+    装修程度：<input type="text" name="decoration"><br>
+    <input type="submit" value="提交">
+</form>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+
+    <title>登录界面</title>
+</head>
+<body>
+<nav>
+    <a href="/user">个人页面</a>
+    <a href="/houseInfo">房屋总览</a>
+    <a href="/about">关于我们</a>
+    <a href="/sendHouse">我要卖房</a>
+    <a href="/exit">退出</a>
+</nav>
+<h1>登录</h1>
+
+<form method="post" action="/login">
+    用户名：<input type="text" name="userName">
+    密码：<input type="password" name="pwd">
+    是否为中介：<input type="checkbox" name="zhongjie"> <br>
+    <input type="submit" value="登录">
+</form>
+
+
+<p class="register-a">没有账号，<a href="/register">立即注册</a></p>
+</body>
+</html>
