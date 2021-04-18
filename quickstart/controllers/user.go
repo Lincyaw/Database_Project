@@ -183,6 +183,7 @@ func (c *MainController) UserInfoGet() {
 		c.Redirect("/login", 302)
 		return
 	}
+	// todo：显示收藏、预约，如果是中介的话，还要显示自己的房源有哪些，并且还能删除
 	o := orm.NewOrm()
 	qs := o.QueryTable("User")
 	data := models.User{}
@@ -201,6 +202,7 @@ func (c *MainController) UserInfoGet() {
 	c.TplName = "userInfo.html"
 }
 func (c *MainController) UserInfoPost() {
+	// 并且能够删除
 	userName := c.GetString("userName")
 	if userName == "" {
 		c.TplName = "changeInfo.html"
@@ -440,6 +442,10 @@ func (c *MainController) SendPost() {
 }
 
 func (c *MainController) DetailGet() {
+	userId := c.GetSession("userId")
+	if userId == nil {
+		c.Redirect("/login", 302)
+	}
 	id := c.Input().Get("id")
 	if id == "" {
 		c.Redirect("/houseInfo", 302)
@@ -455,6 +461,12 @@ func (c *MainController) DetailGet() {
 	}
 
 	fmt.Println(houseInfo.String())
+	//err = qs.Filter("inter__name", houseInfo.Inter.Id).One(&houseInfo)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//fmt.Println(houseInfo.String())
+
 	inter := models.Inter{}
 	qs = o.QueryTable("inter")
 	qs.Filter("id", houseInfo.Inter.Id).One(&inter)
@@ -510,34 +522,82 @@ func (c *MainController) DetailPost() {
 		fmt.Println(UnmarshalErr)
 	}
 	fmt.Println(requestBodyMap)
-
 	o := orm.NewOrm()
-	fav := models.Favourite{}
 
-	house := models.House{}
-	qs := o.QueryTable("house")
-	id, err := strconv.Atoi(requestBodyMap["houseId"])
-	if err != nil {
-		fmt.Println(err)
-	}
-	err = qs.Filter("id", id).One(&house)
-	if err != nil {
-		fmt.Println(err)
-	}
+	if requestBodyMap["type"] == "booking" {
+		house := models.House{}
+		qs := o.QueryTable("house")
+		id, err := strconv.Atoi(requestBodyMap["houseId"])
+		if err != nil {
+			fmt.Println(err)
+		}
+		err = qs.Filter("id", id).One(&house)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-	user := models.User{}
-	qs = o.QueryTable("user")
-	userid := c.GetSession("userId")
-	err = qs.Filter("id", userid).One(&user)
-	if err != nil {
-		fmt.Println(err)
-	}
+		user := models.User{}
+		qs = o.QueryTable("user")
+		userid := c.GetSession("userId")
+		err = qs.Filter("id", userid).One(&user)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-	//fav.House = append(fav.House,&house)
-	//fav.User = append(fav.User,&user)
-	_,err = o.Insert(&fav)
-	if err != nil {
-		fmt.Println(err)
+		app := models.Appointment{}
+		app.House = &house
+		app.User = &user
+
+		user.Appointments = append(user.Appointments, &app)
+		house.Appointments = append(house.Appointments, &app)
+
+		o.Begin()
+		_, err = o.Insert(&app)
+		if err != nil {
+			fmt.Println(err)
+			o.Rollback()
+		}
+		_, err = o.Update(&user)
+		if err != nil {
+			fmt.Println(err)
+			o.Rollback()
+		}
+		_, err = o.Update(&house)
+		if err != nil {
+			fmt.Println(err)
+			o.Rollback()
+		}
+	} else {
+		house := models.House{}
+		qs := o.QueryTable("house")
+		id, err := strconv.Atoi(requestBodyMap["houseId"])
+		if err != nil {
+			fmt.Println(err)
+		}
+		err = qs.Filter("id", id).One(&house)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		user := models.User{}
+		qs = o.QueryTable("user")
+		userid := c.GetSession("userId")
+		err = qs.Filter("id", userid).One(&user)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		user.Favourites = append(user.Favourites, &house)
+		house.Favourites = append(house.Favourites, &user)
+		_, err = o.Update(&user)
+		if err != nil {
+			fmt.Println(err)
+		}
+		_, err = o.Update(&house)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
-	c.Redirect("/detail/?id=", id)
+	o.Commit()
+	c.TplName = "detail.html"
 }

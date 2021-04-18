@@ -12,13 +12,14 @@ import (
 // model 里存放表的设计
 type User struct {
 	Id          int
-	Name        string       `orm:"index"`
-	Pwd         string       `orm:"size(20)"`
-	PhoneNum    string       `orm:"index;unique;null"`
-	Mail        string       `orm:"index;unique;null"`
-	Wechat      string       `orm:"unique;null"`
-	Avatar      string       `orm:"size(256);null"`
-	Appointment *Appointment `orm:"reverse(one)"`
+	Name        string         `orm:"index"`
+	Pwd         string         `orm:"size(20)"`
+	PhoneNum    string         `orm:"index;unique;null"`
+	Mail        string         `orm:"index;unique;null"`
+	Wechat      string         `orm:"unique;null"`
+	Avatar      string         `orm:"size(256);null"`
+	Appointments []*Appointment `orm:"reverse(many)"`
+	Favourites  []*House       `orm:"reverse(many)"`
 }
 
 type Inter struct {
@@ -42,17 +43,18 @@ type ChatLog struct {
 
 type Appointment struct {
 	Id    int
-	User  *User     `orm:"rel(one)"`
-	House *House    `orm:"rel(one)"`
+	User  *User     `orm:"rel(fk)"`
+	House *House    `orm:"rel(fk)"`
 	Time  time.Time `orm:"auto_now_add;type(datetime)"`
 }
 
-type Favourite struct {
-	Id    int
-	User  *User     `orm:"rel(one)"`
-	House *House    `orm:"rel(one)"`
-	Time  time.Time `orm:"auto_now_add;type(datetime)"`
-}
+//type Favourite struct {
+//	Id    int
+//	User  *User     `orm:"rel(fk)"`
+//	House *House    `orm:"rel(fk)"`
+//	Time  time.Time `orm:"auto_now_add;type(datetime)"`
+//}
+
 func (conf *House) String() string {
 	b, err := json.Marshal(*conf)
 	if err != nil {
@@ -65,22 +67,24 @@ func (conf *House) String() string {
 	}
 	return out.String()
 }
+
 type House struct {
-	Id          int
-	Space       int `orm:"null"`
-	Price       int
-	Direction   int          `orm:"null"`
-	Floor       int          `orm:"null"`
-	Age         int          `orm:"null"`
-	Emergency   int          `orm:"null"`
-	Appointment *Appointment `orm:"reverse(one)"`
-	Subway      *Subway      `orm:"rel(fk)"`
-	Area        *Area        `orm:"rel(fk)"`
-	Property    *Property    `orm:"rel(fk)"`
-	Rooms       *Rooms       `orm:"rel(fk)"`
-	HouseType   *HouseType   `orm:"rel(fk)"`
-	Decoration  *Decoration  `orm:"rel(fk)"`
-	Inter       *Inter       `orm:"rel(fk)"`
+	Id           int
+	Space        int `orm:"null"`
+	Price        int
+	Direction    int            `orm:"null"`
+	Floor        int            `orm:"null"`
+	Age          int            `orm:"null"`
+	Emergency    int            `orm:"null"`
+	Subway       *Subway        `orm:"rel(fk)"`
+	Area         *Area          `orm:"rel(fk)"`
+	Property     *Property      `orm:"rel(fk)"`
+	Rooms        *Rooms         `orm:"rel(fk)"`
+	HouseType    *HouseType     `orm:"rel(fk)"`
+	Decoration   *Decoration    `orm:"rel(fk)"`
+	Inter        *Inter         `orm:"rel(fk)"`
+	Favourites   []*User         `orm:"rel(m2m)"`
+	Appointments []*Appointment `orm:"reverse(many)"`
 }
 
 type Subway struct {
@@ -122,7 +126,7 @@ type Decoration struct {
 func init() {
 	orm.RegisterDataBase("default", "mysql", "root:000448664@tcp(127.0.0.1:3306)/test?charset=utf8")
 	// 映射model数据
-	orm.RegisterModel(new(User), new(Inter), new(ChatLog), new(Appointment), new(Favourite), new(House), new(Subway),
+	orm.RegisterModel(new(User), new(Inter), new(ChatLog), new(Appointment), new(House), new(Subway),
 		new(Area), new(Property), new(Rooms), new(HouseType), new(Decoration))
 	// 别名， 是否强制更新， 是否可变
 	orm.RunSyncdb("default", false, true)
