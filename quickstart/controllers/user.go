@@ -153,6 +153,7 @@ func (c *MainController) HandleLogin() {
 		}
 		//c.SetSession("userName", userName)
 		c.SetSession("userId", user.Id)
+		c.SetSession("isInter", false)
 		// 4. 跳转
 		c.Redirect("/houseInfo", 302)
 	} else {
@@ -171,6 +172,7 @@ func (c *MainController) HandleLogin() {
 		}
 		//c.SetSession("userName", userName)
 		c.SetSession("userId", user.Id)
+		c.SetSession("isInter", true)
 		// 4. 跳转
 		c.Redirect("/houseInfo", 302)
 	}
@@ -183,22 +185,66 @@ func (c *MainController) UserInfoGet() {
 		c.Redirect("/login", 302)
 		return
 	}
-	// todo：显示收藏、预约，如果是中介的话，还要显示自己的房源有哪些，并且还能删除
+	isInter := c.GetSession("isInter")
 	o := orm.NewOrm()
-	qs := o.QueryTable("User")
-	data := models.User{}
-	err := qs.Filter("id__exact", userid).One(&data)
-	if err != nil {
-		fmt.Println(err)
-		return
+	// 不是中介
+	if isInter == false {
+		qs := o.QueryTable("User")
+		user := models.User{}
+		err := qs.Filter("id__exact", userid).One(&user)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(user)
+		c.Data["Id"] = user.Id
+		fmt.Println(c.Data["Id"])
+		c.Data["Mail"] = user.Mail
+		c.Data["Wechat"] = user.Wechat
+		c.Data["PhoneNum"] = user.PhoneNum
+		c.Data["Name"] = user.Name
+		/* -------------------------------*/
+		// todo: 显示收藏
+		m2m := o.QueryM2M(&user,"Favourites")
+		num,err:=m2m.Count()
+		//o.Read(&user)
+		//fmt.Println(user)
+		/* -------------------------------*/
+
+		fmt.Println("收藏 ", user.Favourites,num)
+		favs := make([]int, len(user.Favourites))
+		for i, fav := range user.Favourites {
+			favs[i] = fav.Id
+		}
+		c.Data["Favs"] = favs
+
+		appointment := []models.Appointment{}
+		qs = o.QueryTable("Appointment")
+		_, err = qs.Filter("user_id", userid).All(&appointment)
+		fmt.Println("user info appointment", err)
+		houseId := make([]int, len(appointment))
+		for i, app := range appointment {
+			houseId[i] = app.House.Id
+		}
+		c.Data["Appointments"] = houseId
+
+	} else {
+		// 是中介
+		qs := o.QueryTable("Inter")
+		data := models.Inter{}
+		err := qs.Filter("id__exact", userid).One(&data)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(data)
+		c.Data["Id"] = data.Id
+		fmt.Println(c.Data["Id"])
+		c.Data["Mail"] = data.Mail
+		c.Data["Wechat"] = data.Wechat
+		c.Data["PhoneNum"] = data.PhoneNum
+		c.Data["Name"] = data.Name
 	}
-	fmt.Println(data)
-	c.Data["Id"] = data.Id
-	fmt.Println(c.Data["Id"])
-	c.Data["Mail"] = data.Mail
-	c.Data["Wechat"] = data.Wechat
-	c.Data["PhoneNum"] = data.PhoneNum
-	c.Data["Name"] = data.Name
 	c.TplName = "userInfo.html"
 }
 func (c *MainController) UserInfoPost() {
@@ -311,6 +357,7 @@ func (c *MainController) SendPost() {
 	err = qs.Filter("id__exact", userid).One(&userdata)
 	if err != nil {
 		fmt.Println(err)
+		c.Redirect("/login", 302)
 		return
 	}
 	houseInfo.Inter = &userdata
@@ -337,15 +384,6 @@ func (c *MainController) SendPost() {
 	}
 	// 如果有的话，就把这个对象加到house里
 	houseInfo.Rooms = &tmpRooms
-	// 然后在 rooms 对象中加上这个 house
-	//tmpRooms.Houses = append(tmpRooms.Houses, &houseInfo)
-	//_, err = qs.Filter("Id", tmpRooms.Id).Update(orm.Params{
-	//	"houses": tmpRooms.Houses,
-	//})
-	//if err != nil {
-	//	fmt.Println("更新失败", err)
-	//	o.Rollback()
-	//}
 	/*--------------------------------------------------------------------*/
 	qs = o.QueryTable("subway")
 	tmpSub := models.Subway{}
@@ -363,14 +401,6 @@ func (c *MainController) SendPost() {
 	// 如果有的话，就把这个对象加到house里
 	houseInfo.Subway = &tmpSub
 	tmpSub.Houses = append(tmpSub.Houses, &houseInfo)
-	// 然后在 rooms 对象中加上这个 house
-	//_, err = qs.Filter("Id", tmpSub.Id).Update(orm.Params{
-	//	"houses": tmpSub.Houses,
-	//})
-	//if err != nil {
-	//	fmt.Println("更新失败", err)
-	//	o.Rollback()
-	//}
 	/*--------------------------------------------------------------------*/
 	qs = o.QueryTable("area")
 	tmparea := models.Area{}
@@ -466,17 +496,17 @@ func (c *MainController) DetailGet() {
 	//	fmt.Println(err)
 	//}
 	//fmt.Println(houseInfo.String())
-
-	inter := models.Inter{}
-	qs = o.QueryTable("inter")
-	qs.Filter("id", houseInfo.Inter.Id).One(&inter)
-	c.Data["owner"] = inter.Name
 	c.Data["space"] = houseInfo.Space
 	c.Data["price"] = houseInfo.Price
 	c.Data["dir"] = houseInfo.Direction
 	c.Data["floor"] = houseInfo.Floor
 	c.Data["age"] = houseInfo.Age
 	c.Data["emergency"] = houseInfo.Emergency
+
+	inter := models.Inter{}
+	qs = o.QueryTable("inter")
+	qs.Filter("id", houseInfo.Inter.Id).One(&inter)
+	c.Data["owner"] = inter.Name
 
 	rooms := models.Rooms{}
 	qs = o.QueryTable("rooms")
@@ -510,7 +540,8 @@ func (c *MainController) DetailGet() {
 	c.Data["decoration"] = decoration.Decoration
 
 	c.Data["id"] = id
-	fmt.Println(c.Data)
+
+	fmt.Println("detail of a house: ", c.Data)
 
 	c.TplName = "detail.html"
 }
@@ -523,11 +554,17 @@ func (c *MainController) DetailPost() {
 	}
 	fmt.Println(requestBodyMap)
 	o := orm.NewOrm()
+	isInter := c.GetSession("isInter")
+	if isInter == true {
+		c.Redirect("/login", 302)
+		return
+	}
+	id, err := strconv.Atoi(requestBodyMap["houseId"])
+	userid := c.GetSession("userId")
 
 	if requestBodyMap["type"] == "booking" {
 		house := models.House{}
 		qs := o.QueryTable("house")
-		id, err := strconv.Atoi(requestBodyMap["houseId"])
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -538,18 +575,21 @@ func (c *MainController) DetailPost() {
 
 		user := models.User{}
 		qs = o.QueryTable("user")
-		userid := c.GetSession("userId")
 		err = qs.Filter("id", userid).One(&user)
 		if err != nil {
 			fmt.Println(err)
 		}
 
 		app := models.Appointment{}
+		qs = o.QueryTable("Appointment")
+		err = qs.Filter("user_id", user.Id).Filter("house_id", house.Id).One(&app)
+		if err == nil {
+			// 有这个记录，那么跳过
+			fmt.Println("已经有记录了")
+			goto Finish
+		}
 		app.House = &house
 		app.User = &user
-
-		user.Appointments = append(user.Appointments, &app)
-		house.Appointments = append(house.Appointments, &app)
 
 		o.Begin()
 		_, err = o.Insert(&app)
@@ -557,47 +597,39 @@ func (c *MainController) DetailPost() {
 			fmt.Println(err)
 			o.Rollback()
 		}
-		_, err = o.Update(&user)
-		if err != nil {
-			fmt.Println(err)
-			o.Rollback()
-		}
-		_, err = o.Update(&house)
-		if err != nil {
-			fmt.Println(err)
-			o.Rollback()
-		}
+		o.Commit()
+
 	} else {
-		house := models.House{}
 		qs := o.QueryTable("house")
-		id, err := strconv.Atoi(requestBodyMap["houseId"])
-		if err != nil {
-			fmt.Println(err)
-		}
+		house := models.House{}
 		err = qs.Filter("id", id).One(&house)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("不存在house", err)
+		}
+		if v, ok := userid.(int); ok {
+			qs = o.QueryTable("user")
+			user := models.User{}
+			qs.Filter("id", v).One(&user)
+
+			m2m := o.QueryM2M(&house,"Favourites")
+			ret := m2m.Exist(user)
+			num,err := m2m.Count()
+			fmt.Println("有",num,"条")
+			if ret == false{
+				// 没有互相收藏的记录
+				_,err = m2m.Add(user)
+				if err != nil {
+					fmt.Println("更新失败", err)
+				}
+			}else{
+				// 有
+				goto Finish
+			}
+		} else {
+			goto Finish
 		}
 
-		user := models.User{}
-		qs = o.QueryTable("user")
-		userid := c.GetSession("userId")
-		err = qs.Filter("id", userid).One(&user)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		user.Favourites = append(user.Favourites, &house)
-		house.Favourites = append(house.Favourites, &user)
-		_, err = o.Update(&user)
-		if err != nil {
-			fmt.Println(err)
-		}
-		_, err = o.Update(&house)
-		if err != nil {
-			fmt.Println(err)
-		}
 	}
-	o.Commit()
+Finish:
 	c.TplName = "detail.html"
 }

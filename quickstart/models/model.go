@@ -11,15 +11,15 @@ import (
 
 // model 里存放表的设计
 type User struct {
-	Id          int
-	Name        string         `orm:"index"`
-	Pwd         string         `orm:"size(20)"`
-	PhoneNum    string         `orm:"index;unique;null"`
-	Mail        string         `orm:"index;unique;null"`
-	Wechat      string         `orm:"unique;null"`
-	Avatar      string         `orm:"size(256);null"`
+	Id           int
+	Name         string         `orm:"index"`
+	Pwd          string         `orm:"size(20)"`
+	PhoneNum     string         `orm:"index;unique;null"`
+	Mail         string         `orm:"index;unique;null"`
+	Wechat       string         `orm:"unique;null"`
+	Avatar       string         `orm:"size(256);null"`
 	Appointments []*Appointment `orm:"reverse(many)"`
-	Favourites  []*House       `orm:"reverse(many)"`
+	Favourites   []*House       `orm:"reverse(many)"`
 }
 
 type Inter struct {
@@ -83,7 +83,7 @@ type House struct {
 	HouseType    *HouseType     `orm:"rel(fk)"`
 	Decoration   *Decoration    `orm:"rel(fk)"`
 	Inter        *Inter         `orm:"rel(fk)"`
-	Favourites   []*User         `orm:"rel(m2m)"`
+	Favourites   []*User        `orm:"rel(m2m)"`
 	Appointments []*Appointment `orm:"reverse(many)"`
 }
 
@@ -123,8 +123,9 @@ type Decoration struct {
 	Houses     []*House `orm:"reverse(many)"`
 }
 
+
 func init() {
-	orm.RegisterDataBase("default", "mysql", "root:000448664@tcp(127.0.0.1:3306)/test?charset=utf8")
+	orm.RegisterDataBase("default", "mysql", "DBlab:f000448664@tcp(127.0.0.1:3306)/test?charset=utf8")
 	// 映射model数据
 	orm.RegisterModel(new(User), new(Inter), new(ChatLog), new(Appointment), new(House), new(Subway),
 		new(Area), new(Property), new(Rooms), new(HouseType), new(Decoration))

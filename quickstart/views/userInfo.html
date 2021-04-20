@@ -40,9 +40,26 @@
 </form>
 
 <h1>我的收藏</h1>
-
+<table border="1">
+    {{range $i,$v := .Favs}}
+    <tr>
+        <td>{{$i}}</td>
+        <td>
+            <a href="/detail/?id={{$v}}">详情</a>
+        </td>
+    </tr>
+    {{end}}
+</table>
 <h1>我的预约</h1>
-
-
+<table border="1">
+    {{range $i,$v := .Appointments}}
+    <tr>
+        <td>我预约的第{{$i}}个房子</td>
+        <td>
+            <a href="/detail/?id={{$v}}">详情</a>
+        </td>
+    </tr>
+    {{end}}
+</table>
 </body>
 </html>
