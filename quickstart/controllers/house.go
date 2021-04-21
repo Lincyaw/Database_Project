@@ -38,7 +38,6 @@ func (c *HouseController) HouseGet() {
 }
 
 func (c *HouseController) HousePost() {
-
 	c.TplName = "detail.html"
 }
 

@@ -14,56 +14,6 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
-	// 增
-	//// 1. 有orm对象
-	//o := orm.NewOrm()
-	//// 2. 有要插入数据的结构体对象
-	//user := models.User{}
-	//// 3. 对结构体对象赋值
-	//user.Name = "111"
-	//user.Pwd = "222"
-	//// 4. 插入
-	//_, err :=o.Insert(&user)
-	//if err != nil{
-	//	beego.Info(err)
-	//}
-
-	// 查
-	// 1. 有orm对象
-	//o := orm.NewOrm()
-	//// 2. 查询的对象
-	//user := models.User{}
-	//// 3. 指定查询对象的字段值
-	//user.Name = "111"
-	//// 4. 查询
-	//err := o.Read(&user,"Name")
-	//
-	//if err != nil{
-	//	beego.Info(err)
-	//}
-	//beego.Info("查询成功", user)
-
-	// 改
-	// 1. 有orm对象
-	//o := orm.NewOrm()
-	////2. 需要更新的结构体对象
-	//user := models.User{}
-	////3. 查到需要更新的数据
-	//user.Id = 1
-	//err := o.Read(&user)
-	////4. 给数据重新赋值
-	//if err == nil {
-	//	user.Name = "222"
-	//	user.Pwd = "3334"
-	//	//5. 更新
-	//	_,err := o.Update(&user)
-	//	if err != nil{
-	//		beego.Info(err)
-	//		return
-	//	}
-	//	beego.Info("更新成功")
-	//}
-
 	c.Redirect("/login", 302)
 }
 func (c *MainController) ShowRegister() {
@@ -117,8 +67,6 @@ func (c *MainController) HandleRegister() {
 
 	// 返回登录界面
 	c.Redirect("/login", 302)
-
-	//c.Ctx.WriteString("注册成功")
 }
 func (c *MainController) ShowLogin() {
 	c.TplName = "login.html"
@@ -151,7 +99,6 @@ func (c *MainController) HandleLogin() {
 			c.TplName = "login.html"
 			return
 		}
-		//c.SetSession("userName", userName)
 		c.SetSession("userId", user.Id)
 		c.SetSession("isInter", false)
 		// 4. 跳转
@@ -196,98 +143,231 @@ func (c *MainController) UserInfoGet() {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println(user)
+		//fmt.Println(user)
 		c.Data["Id"] = user.Id
-		fmt.Println(c.Data["Id"])
+		//fmt.Println(c.Data["Id"])
 		c.Data["Mail"] = user.Mail
 		c.Data["Wechat"] = user.Wechat
 		c.Data["PhoneNum"] = user.PhoneNum
 		c.Data["Name"] = user.Name
-		/* -------------------------------*/
-		// todo: 显示收藏
-		m2m := o.QueryM2M(&user,"Favourites")
-		num,err:=m2m.Count()
-		//o.Read(&user)
-		//fmt.Println(user)
-		/* -------------------------------*/
-
-		fmt.Println("收藏 ", user.Favourites,num)
-		favs := make([]int, len(user.Favourites))
-		for i, fav := range user.Favourites {
-			favs[i] = fav.Id
+		/* --------------收藏-----------------*/
+		n, err := o.LoadRelated(&user, "Favourites")
+		if err != nil {
+			fmt.Println("连接表失败，", n, err)
 		}
-		c.Data["Favs"] = favs
+		if len(user.Favourites) != 0 {
+			favs := make([]int, len(user.Favourites))
+			for i, house := range user.Favourites {
+				favs[i] = house.Id
+			}
+			// 获取房子信息
+			houseData0 := []models.House{}
+			qs = o.QueryTable("house")
+			qs.Filter("id__in", favs).All(&houseData0)
+			frontData0 := make([][]int, len(houseData0))
+			for i := range frontData0 {
+				frontData0[i] = make([]int, 7)
+			}
+			for i, v := range houseData0 {
+				frontData0[i][0] = v.Id
+				frontData0[i][1] = v.Space
+				frontData0[i][2] = v.Price
+				frontData0[i][3] = v.Direction
+				frontData0[i][4] = v.Floor
+				frontData0[i][5] = v.Age
+				frontData0[i][6] = v.Emergency
+			}
+			c.Data["Favs"] = frontData0
+		}
 
+		/* --------------预约-----------------*/
 		appointment := []models.Appointment{}
 		qs = o.QueryTable("Appointment")
 		_, err = qs.Filter("user_id", userid).All(&appointment)
-		fmt.Println("user info appointment", err)
+		fmt.Println("user_info appointment:", err)
+		// 获取预约的所有的房子id
 		houseId := make([]int, len(appointment))
-		for i, app := range appointment {
-			houseId[i] = app.House.Id
-		}
-		c.Data["Appointments"] = houseId
+		if len(appointment) != 0 {
+			for i, app := range appointment {
+				houseId[i] = app.House.Id
+			}
+			// 获取房子信息
+			houseData := []models.House{}
+			qs = o.QueryTable("house")
+			qs.Filter("id__in", houseId).All(&houseData)
+			frontData := make([][]int, len(houseData))
+			for i := range frontData {
+				frontData[i] = make([]int, 7)
+			}
+			for i, v := range houseData {
+				frontData[i][0] = v.Id
+				frontData[i][1] = v.Space
+				frontData[i][2] = v.Price
+				frontData[i][3] = v.Direction
+				frontData[i][4] = v.Floor
+				frontData[i][5] = v.Age
+				frontData[i][6] = v.Emergency
+			}
+			//fmt.Println(frontData)
+			c.Data["arr"] = frontData
+			/*------------------结束---------------*/
 
+			c.Data["Appointments"] = houseId
+		}
+		c.TplName = "userInfo.html"
 	} else {
 		// 是中介
 		qs := o.QueryTable("Inter")
-		data := models.Inter{}
-		err := qs.Filter("id__exact", userid).One(&data)
+		Inter := models.Inter{}
+		err := qs.Filter("id__exact", userid).One(&Inter)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println(data)
-		c.Data["Id"] = data.Id
+		o.LoadRelated(&Inter, "Houses")
+		//fmt.Println(Inter)
+		c.Data["Id"] = Inter.Id
 		fmt.Println(c.Data["Id"])
-		c.Data["Mail"] = data.Mail
-		c.Data["Wechat"] = data.Wechat
-		c.Data["PhoneNum"] = data.PhoneNum
-		c.Data["Name"] = data.Name
+		c.Data["Mail"] = Inter.Mail
+		c.Data["Wechat"] = Inter.Wechat
+		c.Data["PhoneNum"] = Inter.PhoneNum
+		c.Data["Name"] = Inter.Name
+		houses := make([]int, len(Inter.Houses))
+		for i, v := range Inter.Houses {
+			houses[i] = v.Id
+		}
+		if len(Inter.Houses) <= 0 {
+			c.TplName = "InterInfo.html"
+			return
+		}
+		houseData := []models.House{}
+		qs = o.QueryTable("house")
+		qs.Filter("id__in", houses).All(&houseData)
+		frontData := make([][]int, len(houseData))
+		for i := range frontData {
+			frontData[i] = make([]int, 7)
+		}
+		for i, v := range houseData {
+			frontData[i][0] = v.Id
+			frontData[i][1] = v.Space
+			frontData[i][2] = v.Price
+			frontData[i][3] = v.Direction
+			frontData[i][4] = v.Floor
+			frontData[i][5] = v.Age
+			frontData[i][6] = v.Emergency
+		}
+		//fmt.Println(frontData)
+		c.Data["arr"] = frontData
+		c.TplName = "InterInfo.html"
 	}
-	c.TplName = "userInfo.html"
+}
+func dataProducer() {
+
 }
 func (c *MainController) UserInfoPost() {
-	// 并且能够删除
-	userName := c.GetString("userName")
-	if userName == "" {
-		c.TplName = "changeInfo.html"
+	tmpId := c.GetSession("userId")
+	if tmpId == nil {
+		c.Redirect("/login", 302)
 		return
 	}
-	// 拿到数据
-	phone := c.GetString("phoneNumber")
-	pwd := c.GetString("pwd")
-	pwd2 := c.GetString("pwd2")
-	beego.Info(userName, pwd)
-	// 对数据进行校验
-	if userName == "" || pwd == "" || phone == "" || pwd != pwd2 {
-		beego.Info("数据不能为空")
-		c.Redirect("/user", 302)
+	userid := tmpId.(int)
+	requestBodyMap := make(map[string]string)
+	UnmarshalErr := json.Unmarshal(c.Ctx.Input.RequestBody, &requestBodyMap)
+	if UnmarshalErr != nil {
+		fmt.Println(UnmarshalErr)
 	}
-	if len(phone) != 11 {
-		c.Redirect("/c", 302)
-	}
-	// 更新数据库
-	userid := c.GetSession("userId")
+	fmt.Println(requestBodyMap)
 	o := orm.NewOrm()
-	qs := o.QueryTable("user")
-	num, err := qs.Filter("id", userid).Update(orm.Params{
-		"name":     userName,
-		"pwd":      pwd,
-		"phoneNum": phone,
-		"wechat":   c.GetString("wechat"),
-		"mail":     c.GetString("mail"),
-	})
-	beego.Info("成功执行了", num, "条")
-	if err != nil {
-		beego.Info("更新数据失败", err)
-		c.Redirect("/user", 302)
-		return
+	switch requestBodyMap["type"] {
+	case "deleteFav":
+		tmp := requestBodyMap["houseId"]
+		houseId, err := strconv.Atoi(tmp)
+		if err != nil {
+			fmt.Println("字符串转数字失败", err)
+		}
+		house := models.House{
+			Id: houseId,
+		}
+		user := models.User{
+			Id: userid,
+		}
+		err = o.Read(&house)
+		if err != nil {
+			fmt.Println("读house失败", err)
+		}
+		err = o.Read(&user)
+		if err != nil {
+			fmt.Println("读user失败", err)
+		}
+		m2m := o.QueryM2M(&user, "Favourites")
+		_, err = m2m.Remove(&house)
+		if err != nil {
+			fmt.Println("删除失败", err)
+		}
+		c.TplName = "userInfo.html"
+	case "deleteApp":
+		tmp := requestBodyMap["houseId"]
+		houseId, err := strconv.Atoi(tmp)
+		if err != nil {
+			fmt.Println("字符串转数字失败", err)
+		}
+		qs := o.QueryTable("Appointment")
+		n, err := qs.Filter("House__id", houseId).Filter("User__id", userid).Delete()
+		fmt.Println("删除了", n, "条")
+		if err != nil {
+			fmt.Println("删除失败", err)
+		}
+		c.TplName = "userInfo.html"
+	case "deleteHouse":
+		tmp := requestBodyMap["houseId"]
+		houseId, err := strconv.Atoi(tmp)
+		if err != nil {
+			fmt.Println("字符串转数字失败", err)
+		}
+		house := models.House{}
+		house.Id = houseId
+		_, err = o.Delete(&house)
+		if err != nil {
+			fmt.Println("删除失败", err)
+		}
+	default:
+		// 并且能够删除
+		userName := c.GetString("userName")
+		if userName == "" {
+			c.TplName = "changeInfo.html"
+			return
+		}
+		// 拿到数据
+		phone := c.GetString("phoneNumber")
+		pwd := c.GetString("pwd")
+		pwd2 := c.GetString("pwd2")
+		beego.Info(userName, pwd)
+		// 对数据进行校验
+		if userName == "" || pwd == "" || phone == "" || pwd != pwd2 {
+			beego.Info("数据不能为空")
+			c.Redirect("/user", 302)
+		}
+		if len(phone) != 11 {
+			c.Redirect("/c", 302)
+		}
+		// 更新数据库
+		qs := o.QueryTable("user")
+		num, err := qs.Filter("id", userid).Update(orm.Params{
+			"name":     userName,
+			"pwd":      pwd,
+			"phoneNum": phone,
+			"wechat":   c.GetString("wechat"),
+			"mail":     c.GetString("mail"),
+		})
+		beego.Info("成功执行了", num, "条")
+		if err != nil {
+			beego.Info("更新数据失败", err)
+			c.Redirect("/user", 302)
+			return
+		}
+		// 返回登录界面
+		c.Redirect("/login", 302)
 	}
-
-	// 返回登录界面
-	c.Redirect("/login", 302)
-
 }
 func (c *MainController) AboutGet() {
 	c.TplName = "about.html"
@@ -299,9 +379,13 @@ func (c *MainController) ExitGet() {
 
 func (c *MainController) SendGet() {
 	userid := c.GetSession("userId")
+	isInter := c.GetSession("isInter")
 	if userid == nil {
 		c.Redirect("/login", 302)
 		return
+	}
+	if isInter.(bool) == false {
+		c.Redirect("/exit", 302)
 	}
 
 	c.TplName = "addHouse.html"
@@ -556,7 +640,7 @@ func (c *MainController) DetailPost() {
 	o := orm.NewOrm()
 	isInter := c.GetSession("isInter")
 	if isInter == true {
-		c.Redirect("/login", 302)
+		c.Redirect("/exit", 302)
 		return
 	}
 	id, err := strconv.Atoi(requestBodyMap["houseId"])
@@ -611,24 +695,23 @@ func (c *MainController) DetailPost() {
 			user := models.User{}
 			qs.Filter("id", v).One(&user)
 
-			m2m := o.QueryM2M(&house,"Favourites")
+			m2m := o.QueryM2M(&house, "Favourites")
 			ret := m2m.Exist(user)
-			num,err := m2m.Count()
-			fmt.Println("有",num,"条")
-			if ret == false{
+			num, err := m2m.Count()
+			fmt.Println("有", num, "条")
+			if ret == false {
 				// 没有互相收藏的记录
-				_,err = m2m.Add(user)
+				_, err = m2m.Add(user)
 				if err != nil {
 					fmt.Println("更新失败", err)
 				}
-			}else{
+			} else {
 				// 有
 				goto Finish
 			}
 		} else {
 			goto Finish
 		}
-
 	}
 Finish:
 	c.TplName = "detail.html"

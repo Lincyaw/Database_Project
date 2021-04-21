@@ -6,8 +6,8 @@
 </head>
 <a href="/user">个人页面</a>
 <a href="/houseInfo">房屋总览</a>
-<a href="/about">关于我们</a>
 <a href="/sendHouse">我要卖房</a>
+<a href="/about">关于我们</a>
 <a href="/exit">退出</a>
 <body>
 <h1>个人信息</h1>
@@ -41,25 +41,117 @@
 
 <h1>我的收藏</h1>
 <table border="1">
+    <tr>
+        <td>Id</td>
+        <td>房屋面积</td>
+        <td>房屋价格</td>
+        <td>房屋朝向</td>
+        <td>房屋楼层</td>
+        <td>房屋年龄</td>
+        <td>出售紧急程度</td>
+    </tr>
     {{range $i,$v := .Favs}}
     <tr>
-        <td>{{$i}}</td>
+        {{range $k,$w := $v}}
+        <td>{{$w}}</td>
+        {{end}}
         <td>
-            <a href="/detail/?id={{$v}}">详情</a>
+            <button type="button"><a href="/detail/?id={{index $v 0}}">详情</a></button>
+        </td>
+        <td>
+            <button type="button" id="deleteFav{{$i}}" value="{{index $v 0}}" class="deleteFav">删除</button>
         </td>
     </tr>
     {{end}}
 </table>
+
+<!--<table border="1">-->
+<!--    {{range $i,$v := .Favs}}-->
+<!--    <tr>-->
+<!--        <td>我收藏的第{{$i}}个房子</td>-->
+<!--        <td>-->
+<!--            <button type="button"><a href="/detail/?id={{$v}}">详情</a></button>-->
+<!--        </td>-->
+<!--        <td>-->
+<!--            <button type="button" id="deleteFav{{$i}}" value="{{$v}}" class="deleteFav">删除</button>-->
+<!--        </td>-->
+<!--    </tr>-->
+<!--    {{end}}-->
+<!--</table>-->
 <h1>我的预约</h1>
 <table border="1">
-    {{range $i,$v := .Appointments}}
     <tr>
-        <td>我预约的第{{$i}}个房子</td>
+        <td>Id</td>
+        <td>房屋面积</td>
+        <td>房屋价格</td>
+        <td>房屋朝向</td>
+        <td>房屋楼层</td>
+        <td>房屋年龄</td>
+        <td>出售紧急程度</td>
+    </tr>
+    {{range $i,$v := .arr}}
+    <tr>
+        {{range $k,$w := $v}}
+        <td>{{$w}}</td>
+        {{end}}
         <td>
-            <a href="/detail/?id={{$v}}">详情</a>
+            <button><a href="/detail/?id={{index $v 0}}">详情</a></button>
+        </td>
+        <td>
+            <button type="button" id="deleteApp{{$i}}" value="{{index $v 0}}" class="deleteApp">删除</button>
         </td>
     </tr>
     {{end}}
 </table>
+<!--    这里本来是显示第 k 个房子的-->
+<!--<table border="1">-->
+<!--    {{range $i,$v := .Appointments}}-->
+<!--    <tr>-->
+<!--        <td>我预约的第{{$i}}个房子</td>-->
+<!--        <td>-->
+<!--            <button type="button"><a href="/detail/?id={{$v}}">详情</a></button>-->
+<!--        </td>-->
+<!--        <td>-->
+<!--            <button type="button" id="deleteApp{{$i}}" value="{{$v}}" class="deleteApp">删除</button>-->
+<!--        </td>-->
+<!--    </tr>-->
+<!--    {{end}}-->
+</table>
 </body>
+<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $(".deleteFav").on("click", function (e) {
+            let id = $(this).attr("value")
+            console.log("id is: ", id)
+            let data = {
+                "type": "deleteFav",
+                "houseId": id
+            };
+            $.ajax({
+                url: "/user",
+                type: "POST",
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                dataType: "json",
+            });
+        });
+
+        $(".deleteApp").on("click", function (e) {
+            let id = $(this).attr("value")
+            console.log("id is: ", id)
+            let data = {
+                "type": "deleteApp",
+                "houseId": id
+            };
+            $.ajax({
+                url: "/user",
+                type: "POST",
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                dataType: "json",
+            });
+        });
+    })
+</script>
 </html>
