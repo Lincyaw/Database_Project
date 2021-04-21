@@ -125,7 +125,7 @@ type Decoration struct {
 
 
 func init() {
-	orm.RegisterDataBase("default", "mysql", "DBlab:f000448664@tcp(127.0.0.1:3306)/test?charset=utf8")
+	orm.RegisterDataBase("default", "mysql", "root:000448664@tcp(127.0.0.1:3306)/test?charset=utf8")
 	// 映射model数据
 	orm.RegisterModel(new(User), new(Inter), new(ChatLog), new(Appointment), new(House), new(Subway),
 		new(Area), new(Property), new(Rooms), new(HouseType), new(Decoration))
