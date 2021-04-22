@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/fay/Documents/Github/Database_Project/extmem-c/extmem.c
+stdlib.h
+-
+stdio.h
+-
+extmem.h
+C:/Users/fay/Documents/Github/Database_Project/extmem-c/extmem.h
+
+C:/Users/fay/Documents/Github/Database_Project/extmem-c/extmem.h
+
