@@ -43,26 +43,12 @@ int main(int argc, char **argv)
 
     char str[5];
     printf("block 1:\n");
-    for (i = 0; i < 7; i++) //Ò»¸öblk´æ7¸öÔª×é¼ÓÒ»¸öµØÖ·
+    for (i = 0; i < 7; i++) //ä¸€ä¸ªblkå­˜7ä¸ªå…ƒç»„åŠ ä¸€ä¸ªåœ°å€
     {
-
-        for (int k = 0; k < 4; k++)
-        {
-            str[k] = *(blk + i*8 + k);
-        }
-        X = atoi(str);
-        for (int k = 0; k < 4; k++)
-        {
-            str[k] = *(blk + i*8 + 4 + k);
-        }
-        Y = atoi(str);
+        getAttribute(blk,i,&X,&Y);
         printf("(%d, %d) ", X, Y);
     }
-    for (int k = 0; k < 4; k++)
-    {
-        str[k] = *(blk + i*8 + k);
-    }
-    addr = atoi(str);
+    addr = getNext(blk,i);
     printf("\nnext address = %d \n", addr);
 
 
@@ -72,3 +58,11 @@ int main(int argc, char **argv)
     return 0;
 }
 
+/*
+ * block 1:
+(45, 1328) (49, 1526) (59, 1702) (43, 1899) (44, 1615) (45, 1203) (34, 1525)
+next address = 2
+
+IO's is 2
+
+ * */

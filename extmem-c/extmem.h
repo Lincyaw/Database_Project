@@ -10,6 +10,14 @@
 
 #define BLOCK_AVAILABLE 0
 #define BLOCK_UNAVAILABLE 1
+#define RELATION_R_BEGIN 1
+#define RELATION_R_END 16
+#define RELATION_S_BEGIN 17
+#define RELATION_S_END 48
+
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef struct tagBuffer {
     unsigned long numIO; /* Number of IO's*/
@@ -46,5 +54,12 @@ unsigned char *readBlockFromDisk(unsigned int addr, Buffer *buf);
 
 /* Read a block in the buffer to the hard disk by the address of the block. */
 int writeBlockToDisk(unsigned char *blkPtr, unsigned int addr, Buffer *buf);
+
+// 用于内存
+void getAttribute(unsigned char *blk, int tupleId, int *x, int *y);
+// 用于内存
+int getNext(unsigned char *blk, int tupleId);
+// 用于内存
+void writeAttribute(unsigned char *blk, int tupleId, int x, int y);
 
 #endif // EXTMEM_H

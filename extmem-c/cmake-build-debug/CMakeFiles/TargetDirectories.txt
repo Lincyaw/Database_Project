@@ -1,3 +1,0 @@
-C:/Users/fay/Documents/Github/Database_Project/extmem-c/cmake-build-debug/CMakeFiles/extmem_c.dir
-C:/Users/fay/Documents/Github/Database_Project/extmem-c/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/fay/Documents/Github/Database_Project/extmem-c/cmake-build-debug/CMakeFiles/rebuild_cache.dir

@@ -9,8 +9,7 @@
 #include <stdio.h>
 #include "extmem.h"
 
-Buffer *initBuffer(size_t bufSize, size_t blkSize, Buffer *buf)
-{
+Buffer *initBuffer(size_t bufSize, size_t blkSize, Buffer *buf) {
     int i;
 
     buf->numIO = 0;
@@ -18,10 +17,9 @@ Buffer *initBuffer(size_t bufSize, size_t blkSize, Buffer *buf)
     buf->blkSize = blkSize;
     buf->numAllBlk = bufSize / (blkSize + 1);
     buf->numFreeBlk = buf->numAllBlk;
-    buf->data = (unsigned char*)malloc(bufSize * sizeof(unsigned char));
+    buf->data = (unsigned char *) malloc(bufSize * sizeof(unsigned char));
 
-    if (!buf->data)
-    {
+    if (!buf->data) {
         perror("Buffer Initialization Failed!\n");
         return NULL;
     }
@@ -30,25 +28,21 @@ Buffer *initBuffer(size_t bufSize, size_t blkSize, Buffer *buf)
     return buf;
 }
 
-void freeBuffer(Buffer *buf)
-{
+void freeBuffer(Buffer *buf) {
     free(buf->data);
 }
 
-unsigned char *getNewBlockInBuffer(Buffer *buf)
-{
+unsigned char *getNewBlockInBuffer(Buffer *buf) {
     unsigned char *blkPtr;
 
-    if (buf->numFreeBlk == 0)
-    {
+    if (buf->numFreeBlk == 0) {
         perror("Buffer is full!\n");
         return NULL;
     }
 
     blkPtr = buf->data;
 
-    while (blkPtr < buf->data + (buf->blkSize + 1) * buf->numAllBlk)
-    {
+    while (blkPtr < buf->data + (buf->blkSize + 1) * buf->numAllBlk) {
         if (*blkPtr == BLOCK_AVAILABLE)
             break;
         else
@@ -60,20 +54,17 @@ unsigned char *getNewBlockInBuffer(Buffer *buf)
     return blkPtr + 1;
 }
 
-void freeBlockInBuffer(unsigned char *blk, Buffer *buf)
-{
+void freeBlockInBuffer(unsigned char *blk, Buffer *buf) {
     *(blk - 1) = BLOCK_AVAILABLE;
     buf->numFreeBlk++;
 }
 
-int dropBlockOnDisk(unsigned int addr)
-{
+int dropBlockOnDisk(unsigned int addr) {
     char filename[40];
 
     sprintf(filename, "../data/%d.blk", addr);
 
-    if (remove(filename) == -1)
-    {
+    if (remove(filename) == -1) {
         perror("Dropping Block Fails!\n");
         return -1;
     }
@@ -81,22 +72,19 @@ int dropBlockOnDisk(unsigned int addr)
     return 0;
 }
 
-unsigned char *readBlockFromDisk(unsigned int addr, Buffer *buf)
-{
+unsigned char *readBlockFromDisk(unsigned int addr, Buffer *buf) {
     char filename[40];
     unsigned char *blkPtr, *bytePtr;
     char ch;
 
-    if (buf->numFreeBlk == 0)
-    {
+    if (buf->numFreeBlk == 0) {
         perror("Buffer Overflows!\n");
         return NULL;
     }
 
     blkPtr = buf->data;
 
-    while (blkPtr < buf->data + (buf->blkSize + 1) * buf->numAllBlk)
-    {
+    while (blkPtr < buf->data + (buf->blkSize + 1) * buf->numAllBlk) {
         if (*blkPtr == BLOCK_AVAILABLE)
             break;
         else
@@ -106,8 +94,7 @@ unsigned char *readBlockFromDisk(unsigned int addr, Buffer *buf)
     sprintf(filename, "../data/%d.blk", addr);
     FILE *fp = fopen(filename, "r");
 
-    if (!fp)
-    {
+    if (!fp) {
         perror("Reading Block Failed!\n");
         return NULL;
     }
@@ -116,8 +103,7 @@ unsigned char *readBlockFromDisk(unsigned int addr, Buffer *buf)
     blkPtr++;
     bytePtr = blkPtr;
 
-    while (bytePtr < blkPtr + buf->blkSize)
-    {
+    while (bytePtr < blkPtr + buf->blkSize) {
         ch = fgetc(fp);
         *bytePtr = ch;
         bytePtr++;
@@ -129,26 +115,63 @@ unsigned char *readBlockFromDisk(unsigned int addr, Buffer *buf)
     return blkPtr;
 }
 
-int writeBlockToDisk(unsigned char *blkPtr, unsigned int addr, Buffer *buf)
-{
+int writeBlockToDisk(unsigned char *blkPtr, unsigned int addr, Buffer *buf) {
     char filename[40];
     unsigned char *bytePtr;
 
     sprintf(filename, "../data/%d.blk", addr);
     FILE *fp = fopen(filename, "w");
 
-    if (!fp)
-    {
+    if (!fp) {
         perror("Writing Block Failed!\n");
         return -1;
     }
 
     for (bytePtr = blkPtr; bytePtr < blkPtr + buf->blkSize; bytePtr++)
-        fputc((int)(*bytePtr), fp);
+        fputc((int) (*bytePtr), fp);
 
     fclose(fp);
     *(blkPtr - 1) = BLOCK_AVAILABLE;//重新将块置为可用，特别要注意这里
     buf->numFreeBlk++;
     buf->numIO++;
     return 0;
+}
+
+void getAttribute(unsigned char *blk, int tupleId, int *x, int *y) {
+    char str[5];
+    int i = tupleId;
+    for (int k = 0; k < 4; k++) {
+        str[k] = *(blk + i * 8 + k);
+    }
+
+    int X = atoi(str);
+    for (int k = 0; k < 4; k++) {
+        str[k] = *(blk + i * 8 + 4 + k);
+    }
+    int Y = atoi(str);
+    *x = X;
+    *y = Y;
+}
+
+int getNext(unsigned char *blk, int tupleId) {
+    char str[5];
+    for (int k = 0; k < 4; k++) {
+        str[k] = *(blk + tupleId * 8 + k);
+    }
+    int addr = atoi(str);
+    return addr;
+}
+
+void writeAttribute(unsigned char *blk, int tupleId, int x, int y) {
+    char str[5];
+    int i = tupleId;
+
+    sprintf(str, "%d", x);
+    for (int k = 0; k < 4; k++) {
+        *(blk + i * 8 + k) = str[k];
+    }
+    sprintf(str, "%d",y);
+    for (int k = 0; k < 4; k++) {
+        *(blk + i * 8 + 4 + k) = str[k];
+    }
 }
