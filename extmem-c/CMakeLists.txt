@@ -8,4 +8,4 @@ include_directories(.)
 add_executable(extmem_c
         extmem.c
         extmem.h
-        test.c linearSearch.c linearSearch.h)
+        test.c linearSearch.c linearSearch.h template.c)

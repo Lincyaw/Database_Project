@@ -105,9 +105,11 @@ void selectTable(Buffer *buf, int valueC, int valueD, int startBlock, int endBlo
 int sortRelation(Buffer *buf, int startBlock, int endBlock) {
     unsigned char *blk = NULL;
     // 内排序
+    int blkCnt = 0;
     for (int idx = startBlock; idx <= endBlock; idx++) {
-        // 读一个块
-        if ((blk = readBlockFromDisk(idx, buf)) == NULL) {
+        // 读 71个块
+        blk = readBlockFromDisk(idx, buf);
+        if (blk == NULL) {
             perror("Reading Block Failed!\n");
             return -1;
         }
@@ -117,25 +119,38 @@ int sortRelation(Buffer *buf, int startBlock, int endBlock) {
         freeBlockInBuffer(blk, buf);
         freeBlockInBuffer(innerSortBuffer, buf);
     }
+
     // 归并排序
     int num = endBlock - startBlock + 1;
-    int orderDistance = 2, theOther = 1;
+    int orderDistance = 2;
     unsigned char *blk1 = NULL, *blk2 = NULL;
     while (orderDistance < num) {
-        for (int idx = startBlock; idx < num / orderDistance; idx++) {
-            if ((blk1 = readBlockFromDisk(startBlock + idx * orderDistance, buf)) == NULL) {
-                perror("Reading Block Failed!\n");
-                return -1;
+        // orderDistance个一组的归并
+        for (int idx = 0; idx < num / orderDistance; idx++) {
+            /**
+             * 一共有 num/orderDistance 组
+             * 下面对组内进行排序
+             * 这个组的起始块是 startBlock + idx * orderDistance
+             * 结束块是 startBlock + (idx+1) * orderDistance - 1
+             * 其中还要对这个组分成两个部分，然后两者归并
+             */
+            for(int i = startBlock + idx * orderDistance; i<startBlock + idx * orderDistance + orderDistance/2; i++){
+                int a = i, b = i+orderDistance/2;
+#ifdef DEBUG
+                printf("blk%d, blk%d\n",a,b);
+#endif
+//                if ((blk1 = readBlockFromDisk(a, buf)) == NULL) {
+//                    perror("Reading Block Failed!\n");
+//                    return -1;
+//                }
+//                if ((blk2 = readBlockFromDisk(b, buf)) == NULL) {
+//                    perror("Reading Block Failed!\n");
+//                    return -1;
+//                }
+//                mergeTwoBlocks(blk1, blk2);
             }
-            if ((blk2 = readBlockFromDisk(startBlock + idx * orderDistance + theOther, buf)) == NULL) {
-                perror("Reading Block Failed!\n");
-                return -1;
-            }
-            mergeTwoBlocks(blk1, blk2);
+            printf("<<<------------------->>>\n");
         }
-        theOther *= 2;
         orderDistance *= 2;
     }
-
-
 }

@@ -13,7 +13,8 @@ int main(int argc, char **argv) {
         perror("Buffer Initialization Failed!\n");
         return -1;
     }
-    selectTable(&buf, 50, -1, RELATION_S_BEGIN, RELATION_S_END);
+//    selectTable(&buf, 50, -1, RELATION_S_BEGIN, RELATION_S_END);
+    sortRelation(NULL, 10, 20);
 //    /* Get a new block in the buffer */
 //    blk = getNewBlockInBuffer(&buf);
 //

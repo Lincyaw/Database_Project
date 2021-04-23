@@ -162,6 +162,13 @@ int getNext(unsigned char *blk, int tupleId) {
     int addr = atoi(str);
     return addr;
 }
+void writeNext(unsigned char *blk, int tupleId, int addr) {
+    char str[5];
+    sprintf(str,"%d",addr);
+    for (int k = 0; k < 4; k++) {
+        *(blk + tupleId * 8 + k) = str[k];
+    }
+}
 
 void writeAttribute(unsigned char *blk, int tupleId, int x, int y) {
     char str[5];

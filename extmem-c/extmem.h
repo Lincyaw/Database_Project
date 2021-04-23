@@ -29,6 +29,12 @@ typedef struct tagBuffer {
     unsigned char *data; /* Starting address of the buffer */
 } Buffer;
 
+struct writeBlk
+{
+    unsigned char *blk;
+    unsigned int size;
+    unsigned int blkNum; //预计写回的块地址
+};
 /* Initialize a buffer with the specified buffer size and block size.
  * If the initialization fails, the return value is NULL;
  * otherwise the pointer to the buffer.
@@ -64,6 +70,7 @@ int writeBlockToDisk(unsigned char *blkPtr, unsigned int addr, Buffer *buf);
  * @param y
  */
 void getAttribute(unsigned char *blk, int tupleId, int *x, int *y);
+
 /**
  * 获得下一个blk
  * @param blk
@@ -71,6 +78,9 @@ void getAttribute(unsigned char *blk, int tupleId, int *x, int *y);
  * @return
  */
 int getNext(unsigned char *blk, int tupleId);
+
+void writeNext(unsigned char *blk, int tupleId, int addr);
+
 /**
  * 向对应的blk里写数据，不涉及磁盘
  * @param blk
@@ -79,12 +89,15 @@ int getNext(unsigned char *blk, int tupleId);
  * @param y
  */
 void writeAttribute(unsigned char *blk, int tupleId, int x, int y);
+
 // 用于内存，内排序
 void mySort(unsigned char *blk);
+
 /**
  * 原地归并
  * @param blk1 排序后的较小块
  * @param blk2 排序后的较大块
  */
-void mergeTwoBlocks(unsigned char *blk1,unsigned char *blk2);
+void mergeTwoBlocks(unsigned char *blk1, unsigned char *blk2);
+
 #endif // EXTMEM_H
