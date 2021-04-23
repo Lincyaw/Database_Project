@@ -7,7 +7,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "extmem.h"
+
 Buffer *initBuffer(size_t bufSize, size_t blkSize, Buffer *buf) {
     int i;
 
@@ -169,8 +171,47 @@ void writeAttribute(unsigned char *blk, int tupleId, int x, int y) {
     for (int k = 0; k < 4; k++) {
         *(blk + i * 8 + k) = str[k];
     }
-    sprintf(str, "%d",y);
+    sprintf(str, "%d", y);
     for (int k = 0; k < 4; k++) {
         *(blk + i * 8 + 4 + k) = str[k];
+    }
+}
+
+void mySort(unsigned char *blk) {
+    for (int i = 0; i < 7 - 1; i++) {
+        for (int j = 0; j < 7 - 1 - i; j++) {
+            int X1 = -2, Y1 = -2;
+            getAttribute(blk, j, &X1, &Y1);
+            int X2 = -2, Y2 = -2;
+            getAttribute(blk, j + 1, &X2, &Y2);
+            if (X1 > X2) {
+                writeAttribute(blk, j, X2, Y2);
+                writeAttribute(blk, j + 1, X1, Y1);
+            }
+        }
+    }
+}
+static void swap(int *a, int*b){
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+void mergeTwoBlocks(unsigned char *blk1, unsigned char *blk2) {
+
+    // todo: 有问题
+    int i = 0, j = 0;
+    while (i < 7 && j < 7) {
+        int X1 = -2, Y1 = -2;
+        getAttribute(blk1, i, &X1, &Y1);
+        int X2 = -2, Y2 = -2;
+        getAttribute(blk2, j, &X2, &Y2);
+
+        if(X1>X2){
+            swap(&X1,&X2);
+            swap(&Y1,&Y2);
+            writeAttribute(blk1, i, X1,Y1);
+            writeAttribute(blk2, j, X2,Y2);
+        }
+        i++;
     }
 }

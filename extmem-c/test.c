@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
         perror("Buffer Initialization Failed!\n");
         return -1;
     }
-    selectS(&buf, 50, -1);
+    select(&buf, 50, -1, RELATION_S_BEGIN, RELATION_S_END);
 //    /* Get a new block in the buffer */
 //    blk = getNewBlockInBuffer(&buf);
 //
@@ -56,12 +56,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-/*
- * block 1:
-(45, 1328) (49, 1526) (59, 1702) (43, 1899) (44, 1615) (45, 1203) (34, 1525)
-next address = 2
-
-IO's is 2
-
- * */

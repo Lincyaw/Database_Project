@@ -5,13 +5,12 @@
 #include "linearSearch.h"
 
 static int outputIndex = 3000;
-#define DEBUG 1
 
-void selectS(Buffer *buf, int valueC, int valueD) {
+void select(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock) {
     unsigned char *blk = NULL;
     unsigned char *target = NULL;
     int ptr = 0;
-    for (int idx = RELATION_S_BEGIN; idx <= RELATION_S_END; idx++) {
+    for (int idx = startBlock; idx <= endBlock; idx++) {
         // 读一个块
         if ((blk = readBlockFromDisk(idx, buf)) == NULL) {
             perror("Reading Block Failed!\n");
@@ -22,7 +21,7 @@ void selectS(Buffer *buf, int valueC, int valueD) {
             int X = -2, Y = -2;
             getAttribute(blk, i, &X, &Y);
 
-            if(X==-2||Y==-2){
+            if (X == -2 || Y == -2) {
                 perror("没有取到数");
             }
 
@@ -101,6 +100,27 @@ void selectS(Buffer *buf, int valueC, int valueD) {
         }
         freeBlockInBuffer(blk, buf);
     }
-
 }
 
+int sortRelation(Buffer *buf, int startBlock, int endBlock) {
+    unsigned char *blk = NULL;
+    // 内排序
+    for (int idx = startBlock; idx <= endBlock; idx++) {
+        // 读一个块
+        if ((blk = readBlockFromDisk(idx, buf)) == NULL) {
+            perror("Reading Block Failed!\n");
+            return -1;
+        }
+        unsigned char *innerSortBuffer = NULL;
+        innerSortBuffer = getNewBlockInBuffer(buf);
+        mySort(innerSortBuffer);
+        freeBlockInBuffer(blk, buf);
+        freeBlockInBuffer(innerSortBuffer, buf);
+    }
+    // 归并排序
+    int num = endBlock - startBlock + 1;
+    // 有序的块数
+    int orderDistance = 1;
+
+
+}

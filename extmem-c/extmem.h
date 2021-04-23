@@ -14,6 +14,7 @@
 #define RELATION_R_END 16
 #define RELATION_S_BEGIN 17
 #define RELATION_S_END 48
+#define DEBUG 1
 
 #include <stddef.h>
 #include <stdio.h>
@@ -55,11 +56,35 @@ unsigned char *readBlockFromDisk(unsigned int addr, Buffer *buf);
 /* Read a block in the buffer to the hard disk by the address of the block. */
 int writeBlockToDisk(unsigned char *blkPtr, unsigned int addr, Buffer *buf);
 
-// 用于内存
+/**
+ * 在对应的blk里读数据
+ * @param blk
+ * @param tupleId 元组号
+ * @param x
+ * @param y
+ */
 void getAttribute(unsigned char *blk, int tupleId, int *x, int *y);
-// 用于内存
+/**
+ * 获得下一个blk
+ * @param blk
+ * @param tupleId
+ * @return
+ */
 int getNext(unsigned char *blk, int tupleId);
-// 用于内存
+/**
+ * 向对应的blk里写数据，不涉及磁盘
+ * @param blk
+ * @param tupleId 元组id
+ * @param x
+ * @param y
+ */
 void writeAttribute(unsigned char *blk, int tupleId, int x, int y);
-
+// 用于内存，内排序
+void mySort(unsigned char *blk);
+/**
+ * 原地归并
+ * @param blk1 排序后的较小块
+ * @param blk2 排序后的较大块
+ */
+void mergeTwoBlocks(unsigned char *blk1,unsigned char *blk2);
 #endif // EXTMEM_H
