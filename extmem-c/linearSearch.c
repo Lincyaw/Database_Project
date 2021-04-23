@@ -6,7 +6,7 @@
 
 static int outputIndex = 3000;
 
-void select(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock) {
+void selectTable(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock) {
     unsigned char *blk = NULL;
     unsigned char *target = NULL;
     int ptr = 0;
@@ -119,8 +119,23 @@ int sortRelation(Buffer *buf, int startBlock, int endBlock) {
     }
     // 归并排序
     int num = endBlock - startBlock + 1;
-    // 有序的块数
-    int orderDistance = 1;
+    int orderDistance = 2, theOther = 1;
+    unsigned char *blk1 = NULL, *blk2 = NULL;
+    while (orderDistance < num) {
+        for (int idx = startBlock; idx < num / orderDistance; idx++) {
+            if ((blk1 = readBlockFromDisk(startBlock + idx * orderDistance, buf)) == NULL) {
+                perror("Reading Block Failed!\n");
+                return -1;
+            }
+            if ((blk2 = readBlockFromDisk(startBlock + idx * orderDistance + theOther, buf)) == NULL) {
+                perror("Reading Block Failed!\n");
+                return -1;
+            }
+            mergeTwoBlocks(blk1, blk2);
+        }
+        theOther *= 2;
+        orderDistance *= 2;
+    }
 
 
 }
