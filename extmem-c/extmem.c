@@ -224,3 +224,14 @@ void mergeTwoBlocks(unsigned char *blk1, unsigned char *blk2) {
     }
     // 此时，blk1 <= blk2
 }
+
+void printBlk(unsigned char *blk)
+{
+    int X = -1;
+    int Y = -1;
+    for (int j = 0; j < 7; j++)
+    {
+        getAttribute(blk, j, &X, &Y);
+        printf("(X=%d, Y=%d) \n", X, Y);
+    }
+}

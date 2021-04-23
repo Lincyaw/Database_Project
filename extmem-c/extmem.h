@@ -14,7 +14,8 @@
 #define RELATION_R_END 16
 #define RELATION_S_BEGIN 17
 #define RELATION_S_END 48
-#define DEBUG 1
+#define BUBBLE_VERSION 0
+#define DEBUG BUBBLE_VERSION
 
 #include <stddef.h>
 #include <stdio.h>
@@ -29,12 +30,12 @@ typedef struct tagBuffer {
     unsigned char *data; /* Starting address of the buffer */
 } Buffer;
 
-struct writeBlk
-{
+struct writeBlk {
     unsigned char *blk;
     unsigned int size;
     unsigned int blkNum; //预计写回的块地址
 };
+
 /* Initialize a buffer with the specified buffer size and block size.
  * If the initialization fails, the return value is NULL;
  * otherwise the pointer to the buffer.
@@ -99,5 +100,8 @@ void mySort(unsigned char *blk);
  * @param blk2 排序后的较大块
  */
 void mergeTwoBlocks(unsigned char *blk1, unsigned char *blk2);
+
+
+void printBlk(unsigned char *blk);
 
 #endif // EXTMEM_H

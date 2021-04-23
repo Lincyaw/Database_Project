@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 //    selectTable(&buf, 50, -1, RELATION_S_BEGIN, RELATION_S_END);
-    sortRelation(NULL, 10, 20);
+//    sortRelation(NULL, 10, 20);
 //    /* Get a new block in the buffer */
 //    blk = getNewBlockInBuffer(&buf);
 //
@@ -54,6 +54,13 @@ int main(int argc, char **argv) {
 //
 //    printf("\n");
 //    printf("IO's is %d\n", buf.numIO); /* Check the number of IO's */
+    sortRelation(&buf, 17, 48);
 
+    for (int i = 17; i <= 48; i++) {
+        blk = readBlockFromDisk(i, &buf);
+        printBlk(blk);
+        freeBlockInBuffer(blk, &buf);
+    }
+    printf("%lu\n", buf.numIO);
     return 0;
 }
