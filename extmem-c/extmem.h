@@ -17,7 +17,7 @@
 #define BUBBLE_VERSION 0
 #define TPMMS_VERSION 1
 #define RELEASE TPMMS_VERSION
-#define DEBUG TPMMS_VERSION
+//#define DEBUG TPMMS_VERSION
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,12 +102,11 @@ void getAttribute(unsigned char *blk, int tupleId, int *x, int *y);
 /**
  * 获得下一个blk
  * @param blk
- * @param tupleId
  * @return
  */
-int getNext(unsigned char *blk, int tupleId);
+int getNext(unsigned char *blk);
 
-void writeNext(unsigned char *blk, int tupleId, int addr);
+void writeNext(unsigned char *blk,int addr);
 
 /**
  * 向对应的blk里写数据，不涉及磁盘
@@ -137,4 +136,6 @@ void printBlk(unsigned char *blk);
  */
 tuple getMin(bufferInfo* bufCtl);
 
+
+tuple getMinV2(bufferInfo *bufCtl, Buffer* buf);
 #endif // EXTMEM_H

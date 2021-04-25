@@ -124,8 +124,6 @@ int sortRelation(Buffer *buf, int startBlock, int endBlock) {
     }
     bufCtl.commonSize = (int) buf->numAllBlk - 1;
 
-//    int sep = bufCtl.commonSize;
-//    while (bufCtl.totalBlocks>=1) {
     if (bufCtl.totalBlocks % bufCtl.commonSize == 0) {
         bufCtl.nSet = bufCtl.totalBlocks / bufCtl.commonSize;
         bufCtl.lastSize = bufCtl.commonSize;
@@ -178,6 +176,7 @@ int sortRelation(Buffer *buf, int startBlock, int endBlock) {
                 printBlk(bufCtl.blkPtrs[7]);
                 printf("\n");
 #endif
+                writeNext(bufCtl.blkPtrs[7], idx + startBlock + 2000 + 1);
                 writeBlockToDisk(bufCtl.blkPtrs[7], idx + startBlock + 2000, buf);
                 bufCtl.blkCnt[7] = 0;
                 idx++;
@@ -185,22 +184,63 @@ int sortRelation(Buffer *buf, int startBlock, int endBlock) {
             }
         }
         for (int i = 0; i < 8; i++) {
-            freeBlockInBuffer(bufCtl.blkPtrs[i], buf);
+            if (bufCtl.blkPtrs[i] != NULL)
+                freeBlockInBuffer(bufCtl.blkPtrs[i], buf);
             bufCtl.blkCnt[i] = 0;
+            bufCtl.blkPtrs[i] = NULL;
         }
 #if DEBUG == TPMMS_VERSION
         printf(">>>>>>>>>>>>>>>>>>>>> GROUP: %d Finished\n", group + 1);
 #endif
     }
-//        sep *= bufCtl.commonSize;
-//        if(bufCtl.totalBlocks==1){
-//            break;
-//        }
-//        bufCtl.totalBlocks = bufCtl.totalBlocks % bufCtl.commonSize == 0 ? bufCtl.totalBlocks / bufCtl.commonSize :
-//                             bufCtl.totalBlocks / bufCtl.commonSize +1;
-//    }
+    // -----------------------------------
+    for (int group = 1; group < bufCtl.nSet; group++) {
+        bufCtl.blkPtrs[group] = readBlockFromDisk(2000 + startBlock + group * bufCtl.commonSize - 1, buf);
+        writeNext(bufCtl.blkPtrs[group], 0);
+        writeBlockToDisk(bufCtl.blkPtrs[group], 2000 + startBlock + group * bufCtl.commonSize - 1, buf);
+        freeBlockInBuffer(bufCtl.blkPtrs[group], buf);
+        bufCtl.blkPtrs[group] = NULL;
+    }
+    bufCtl.blkPtrs[0] = readBlockFromDisk(2000 + endBlock, buf);
+    writeNext(bufCtl.blkPtrs[0], 0);
+    writeBlockToDisk(bufCtl.blkPtrs[0], 2000 + endBlock, buf);
+    freeBlockInBuffer(bufCtl.blkPtrs[0], buf);
+    bufCtl.blkPtrs[0] = NULL;
 
 
+    // -------------------------------
+    int k = 7;
+    int num = bufCtl.totalBlocks % k == 0 ? bufCtl.totalBlocks / k : bufCtl.totalBlocks / k + 1;
+    bufCtl.curGroup = num;
+    idx = 0;
+    for (int i = 0; i < num; i++) {
+        bufCtl.blkPtrs[i] = readBlockFromDisk(2000 + startBlock + i * k, buf);
+        if (bufCtl.blkPtrs[i] == NULL) {
+            printf("Reading Block Failed! Group: %d\n", i);
+            return -1;
+        }
+    }
+    bufCtl.blkPtrs[7] = getNewBlockInBuffer(buf);
+
+    tuple ret;
+    while (!ret.finish) {
+        ret = getMinV2(&bufCtl, buf);
+        if (ret.finish) {
+            for (int i = 0; i < num; i++) {
+                freeBlockInBuffer(bufCtl.blkPtrs[i], buf);
+                bufCtl.blkCnt[i] = 0;
+            }
+            break;
+        }
+        writeAttribute(bufCtl.blkPtrs[7], bufCtl.blkCnt[7], ret.X, ret.Y);
+        bufCtl.blkCnt[7]++;
+        if (bufCtl.blkCnt[7] == 7) {
+            writeBlockToDisk(bufCtl.blkPtrs[7], idx + startBlock + 3000, buf);
+            bufCtl.blkCnt[7] = 0;
+            idx++;
+            freeBlockInBuffer(bufCtl.blkPtrs[7], buf);
+        }
+    }
 
 
 #endif

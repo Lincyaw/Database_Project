@@ -154,20 +154,26 @@ void getAttribute(unsigned char *blk, int tupleId, int *x, int *y) {
     *y = Y;
 }
 
-int getNext(unsigned char *blk, int tupleId) {
+int getNext(unsigned char *blk) {
     char str[5];
     for (int k = 0; k < 4; k++) {
-        str[k] = *(blk + tupleId * 8 + k);
+        str[k] = *(blk + 7 * 8 + k);
     }
     int addr = atoi(str);
     return addr;
 }
 
-void writeNext(unsigned char *blk, int tupleId, int addr) {
+void writeNext(unsigned char *blk,int addr) {
     char str[5];
+    if(addr==0){
+        for (int k = 0; k < 4; k++) {
+            *(blk + 7 * 8 + k) = 0;
+        }
+        return;
+    }
     sprintf(str, "%d", addr);
     for (int k = 0; k < 4; k++) {
-        *(blk + tupleId * 8 + k) = str[k];
+        *(blk + 7 * 8 + k) = str[k];
     }
 }
 
@@ -248,9 +254,6 @@ tuple getMin(bufferInfo *bufCtl) {
     ret.blockIdx = -1;
     ret.finish = 0;
     int cnt = 0;
-#if RELEASE == TPMMS_VERSION
-    // printf(">>> blksize: %d\n",getSize(bufCtl, bufCtl->curGroup));
-#endif
     int size = getSize(bufCtl, bufCtl->curGroup);
     for (int i = 0; i < size; i++) {
         int X = -1, Y = -1;
@@ -258,6 +261,44 @@ tuple getMin(bufferInfo *bufCtl) {
         if (bufCtl->blkCnt[i] >= 7) {
             cnt++;
             continue;
+        }
+        getAttribute(bufCtl->blkPtrs[i], bufCtl->blkCnt[i], &X, &Y);
+        if(X == -1) continue;
+        if (X < ret.X) {
+            ret.blockIdx = i;
+            ret.X = X;
+            ret.Y = Y;
+        }
+    }
+    if(ret.blockIdx!=-1){
+        bufCtl->blkCnt[ret.blockIdx]++;
+    }
+    // 全部排序了吗
+    ret.finish = cnt == size ? 1 : 0;
+    return ret;
+}
+
+tuple getMinV2(bufferInfo *bufCtl, Buffer *buf) {
+    tuple ret;
+    ret.X = INT_MAX;
+    ret.Y = INT_MAX;
+    ret.blockIdx = -1;
+    ret.finish = 0;
+    int cnt = 0;
+    int size = bufCtl->curGroup;
+    for (int i = 0; i < size; i++) {
+        int X = -1, Y = -1;
+        // 如果指针超过了最大的大小，则表示这个块已经被排序结束了
+        if (bufCtl->blkCnt[i] >= 7) {
+            int next = getNext(bufCtl->blkPtrs[i]);
+            if(next!=0){
+                freeBlockInBuffer(bufCtl->blkPtrs[i],buf);
+                bufCtl->blkPtrs[i] = readBlockFromDisk(next, buf);
+                bufCtl->blkCnt[i] = 0;
+            }else{
+                cnt++;
+                continue;
+            }
         }
         getAttribute(bufCtl->blkPtrs[i], bufCtl->blkCnt[i], &X, &Y);
         if(X == -1) continue;
