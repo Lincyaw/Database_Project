@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "extmem.h"
 #include "linearSearch.h"
-
+#include "2stageSort.h"
 int main(int argc, char **argv) {
     Buffer buf; /* A buffer */
     unsigned char *blk; /* A pointer to a block */
@@ -12,9 +12,9 @@ int main(int argc, char **argv) {
         perror("Buffer Initialization Failed!\n");
         return -1;
     }
-//    sortRelation(&buf, 1, 16);
-    sortRelation(&buf, 17, 48);
-
+//    TPMMS(&buf, 1, 16);
+//    TPMMS(&buf, 17, 48);
+    generateIndex(&buf,3017,3048);
 //    selectTable(&buf,50, -1, 17,48);
     printf("%lu\n", buf.numIO);
     return 0;
