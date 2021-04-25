@@ -6,61 +6,19 @@
 int main(int argc, char **argv) {
     Buffer buf; /* A buffer */
     unsigned char *blk; /* A pointer to a block */
-    int i = 0;
 
     /* Initialize the buffer */
     if (!initBuffer(520, 64, &buf)) {
         perror("Buffer Initialization Failed!\n");
         return -1;
     }
-//    selectTable(&buf, 50, -1, RELATION_S_BEGIN, RELATION_S_END);
-//    sortRelation(NULL, 10, 20);
-//    /* Get a new block in the buffer */
-//    blk = getNewBlockInBuffer(&buf);
-//
-//    /* Fill data into the block */
-//    for (i = 0; i < 8; i++)
-//        *(blk + i) = 'a' + i;
-//
-//    /* Write the block to the hard disk */
-//    if (writeBlockToDisk(blk, 8888, &buf) != 0)
-//    {
-//        perror("Writing Block Failed!\n");
-//        return -1;
+//    sortRelation(&buf, 17, 48);
+    selectTable(&buf,50, -1, 17,48);
+//    for (int i = 17; i <= 48; i++) {
+//        blk = readBlockFromDisk(i, &buf);
+//        printBlk(blk);
+//        freeBlockInBuffer(blk, &buf);
 //    }
-//
-//    /* Read the block from the hard disk */
-//    if ((blk = readBlockFromDisk(1, &buf)) == NULL)
-//    {
-//        perror("Reading Block Failed!\n");
-//        return -1;
-//    }
-//
-//    /* Process the data in the block */
-//    int X = -1;
-//    int Y = -1;
-//    int addr = -1;
-//
-//    char str[5];
-//    printf("block 1:\n");
-//    for (i = 0; i < 7; i++) //一个blk存7个元组加一个地址
-//    {
-//        getAttribute(blk,i,&X,&Y);
-//        printf("(%d, %d) ", X, Y);
-//    }
-//    addr = getNext(blk,i);
-//    printf("\nnext address = %d \n", addr);
-//
-//
-//    printf("\n");
-//    printf("IO's is %d\n", buf.numIO); /* Check the number of IO's */
-    sortRelation(&buf, 17, 48);
-
-    for (int i = 17; i <= 48; i++) {
-        blk = readBlockFromDisk(i, &buf);
-        printBlk(blk);
-        freeBlockInBuffer(blk, &buf);
-    }
     printf("%lu\n", buf.numIO);
     return 0;
 }

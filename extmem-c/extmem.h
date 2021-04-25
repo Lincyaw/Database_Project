@@ -15,8 +15,9 @@
 #define RELATION_S_BEGIN 17
 #define RELATION_S_END 48
 #define BUBBLE_VERSION 0
-#define DEBUG BUBBLE_VERSION
-
+#define TPMMS_VERSION 1
+#define RELEASE TPMMS_VERSION
+#define DEBUG TPMMS_VERSION
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +37,32 @@ struct writeBlk {
     unsigned int blkNum; //预计写回的块地址
 };
 
+
+typedef struct bufferController {
+    // 一共要排序多少个块
+    int totalBlocks;
+    // 每个子集几个块
+    int commonSize;
+    // 最后一个子集几个块
+    int lastSize;
+    // 几个子集
+    int nSet;
+    // 8个blk指针
+    unsigned char *blkPtrs[8];
+    // 8个buffer块的计数
+    int blkCnt[8];
+    // 现在在哪组
+    int curGroup;
+} bufferInfo;
+
+typedef struct tuples {
+    int blockIdx;
+    int X;
+    int Y;
+    int finish;
+}tuple;
+
+int getSize(bufferInfo* bufCtl, int idx);
 /* Initialize a buffer with the specified buffer size and block size.
  * If the initialization fails, the return value is NULL;
  * otherwise the pointer to the buffer.
@@ -103,5 +130,11 @@ void mergeTwoBlocks(unsigned char *blk1, unsigned char *blk2);
 
 
 void printBlk(unsigned char *blk);
+/**
+ * 在每一组的block中找到最小的那个数，并且把对应的那个组的指针+1
+ * @param bufCtl
+ * @return
+ */
+tuple getMin(bufferInfo* bufCtl);
 
 #endif // EXTMEM_H

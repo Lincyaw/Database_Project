@@ -103,64 +103,109 @@ void selectTable(Buffer *buf, int valueC, int valueD, int startBlock, int endBlo
 }
 
 int sortRelation(Buffer *buf, int startBlock, int endBlock) {
-//    unsigned char *blk = NULL;
-//    // 一共要排序多少个 blk
-//    int num = endBlock - startBlock + 1;
-//    // 划分为多少个子集
-//    int nSet = num / (buf->numAllBlk - 2) + 1;
-//
-//
-//    // 内排序
-//    int blkCnt = 0;
-//    for (int idx = startBlock; idx <= endBlock; idx++) {
-//        // 读 1个块
-//        blk = readBlockFromDisk(idx, buf);
-//        if (blk == NULL) {
-//            perror("Reading Block Failed!\n");
-//            return -1;
-//        }
-//        unsigned char *innerSortBuffer = NULL;
-//        innerSortBuffer = getNewBlockInBuffer(buf);
-//        mySort(innerSortBuffer);
-//        writeBlockToDisk(blk,idx,buf);
-//        freeBlockInBuffer(blk, buf);
-//        freeBlockInBuffer(innerSortBuffer, buf);
-//    }
-//
-//    // 归并排序
-//    int orderDistance = 2;
-//    unsigned char *blk1 = NULL, *blk2 = NULL;
-//    while (orderDistance < num) {
-//        // orderDistance个一组的归并
-//        for (int idx = 0; idx < num / orderDistance; idx++) {
-//            /**
-//             * 一共有 num/orderDistance 组
-//             * 下面对组内进行排序
-//             * 这个组的起始块是 startBlock + idx * orderDistance
-//             * 结束块是 startBlock + (idx+1) * orderDistance - 1
-//             * 其中还要对这个组分成两个部分，然后两者归并
-//             */
-//            for (int i = startBlock + idx * orderDistance;
-//                 i < startBlock + idx * orderDistance + orderDistance / 2; i++) {
-//                int a = i, b = i + orderDistance / 2;
-//#ifdef DEBUG
-//                printf("blk%d, blk%d\n", a, b);
-//#endif
-////                if ((blk1 = readBlockFromDisk(a, buf)) == NULL) {
-////                    perror("Reading Block Failed!\n");
-////                    return -1;
-////                }
-////                if ((blk2 = readBlockFromDisk(b, buf)) == NULL) {
-////                    perror("Reading Block Failed!\n");
-////                    return -1;
-////                }
-////                mergeTwoBlocks(blk1, blk2);
+#if RELEASE == TPMMS_VERSION
+    bufferInfo bufCtl;
+    // 一共要排序多少个 blk
+    bufCtl.totalBlocks = endBlock - startBlock + 1;
+    // 划分为多少个子集
+    bufCtl.totalBlocks = endBlock - startBlock + 1;
+
+    // 内排序
+    for (int idx = startBlock; idx <= endBlock; idx++) {
+        // 读 1个块
+        bufCtl.blkPtrs[0] = readBlockFromDisk(idx, buf);
+        if (bufCtl.blkPtrs[0] == NULL) {
+            perror("Reading Block Failed!\n");
+            return -1;
+        }
+        mySort(bufCtl.blkPtrs[0]);
+        writeBlockToDisk(bufCtl.blkPtrs[0], idx + 1000, buf);
+        freeBlockInBuffer(bufCtl.blkPtrs[0], buf);
+    }
+    bufCtl.commonSize = (int) buf->numAllBlk - 1;
+
+//    int sep = bufCtl.commonSize;
+//    while (bufCtl.totalBlocks>=1) {
+    if (bufCtl.totalBlocks % bufCtl.commonSize == 0) {
+        bufCtl.nSet = bufCtl.totalBlocks / bufCtl.commonSize;
+        bufCtl.lastSize = bufCtl.commonSize;
+    } else {
+        bufCtl.nSet = bufCtl.totalBlocks / bufCtl.commonSize + 1;
+        bufCtl.lastSize = bufCtl.totalBlocks % bufCtl.commonSize;
+    }
+    // 初始化
+    for (int i = 0; i < 8; i++) {
+        bufCtl.blkCnt[i] = 0;
+    }
+    // 归并
+    int idx = 0;
+    for (int group = 0; group < bufCtl.nSet; group++) {
+        // 最后一组不足 commonSize个块
+#if DEBUG == TPMMS_VERSION
+        int cnt = -1;
+        printf(">>>>> GROUP: %d\n", group + 1);
+#endif
+        int tmp = getSize(&bufCtl, group);
+        for (int i = 0; i < tmp; i++) {
+            bufCtl.blkPtrs[i] = readBlockFromDisk(1000 + startBlock + i + group * bufCtl.commonSize, buf);
+            if (bufCtl.blkPtrs[i] == NULL) {
+                printf("Reading Block Failed! Group: %d, block: %d\n", group, i);
+                return -1;
+            }
+        }
+        bufCtl.blkPtrs[7] = getNewBlockInBuffer(buf);
+
+        tuple ret;
+        ret.finish = 0;
+        bufCtl.curGroup = group;
+        while (!ret.finish) {
+            ret = getMin(&bufCtl);
+#if DEBUG == TPMMS_VERSION
+//            cnt++;
+//            printf(">> ");
+//            for(int i = 0; i<8; i++){
+//                printf("%d ", bufCtl.blkCnt[i]);
 //            }
-//            printf("<<<------------------->>>\n");
+//            printf("\n");
+//            printf("> %d\tX: %d, Y: %d\n", cnt, ret.X, ret.Y);
+#endif
+            if (ret.finish)
+                break;
+            writeAttribute(bufCtl.blkPtrs[7], bufCtl.blkCnt[7], ret.X, ret.Y);
+            bufCtl.blkCnt[7]++;
+            if (bufCtl.blkCnt[7] == 7) {
+#if DEBUG == TPMMS_VERSION
+                printBlk(bufCtl.blkPtrs[7]);
+                printf("\n");
+#endif
+                writeBlockToDisk(bufCtl.blkPtrs[7], idx + startBlock + 2000, buf);
+                bufCtl.blkCnt[7] = 0;
+                idx++;
+                freeBlockInBuffer(bufCtl.blkPtrs[7], buf);
+            }
+        }
+        for (int i = 0; i < 8; i++) {
+            freeBlockInBuffer(bufCtl.blkPtrs[i], buf);
+            bufCtl.blkCnt[i] = 0;
+        }
+#if DEBUG == TPMMS_VERSION
+        printf(">>>>>>>>>>>>>>>>>>>>> GROUP: %d Finished\n", group + 1);
+#endif
+    }
+//        sep *= bufCtl.commonSize;
+//        if(bufCtl.totalBlocks==1){
+//            break;
 //        }
-//        orderDistance *= 2;
+//        bufCtl.totalBlocks = bufCtl.totalBlocks % bufCtl.commonSize == 0 ? bufCtl.totalBlocks / bufCtl.commonSize :
+//                             bufCtl.totalBlocks / bufCtl.commonSize +1;
 //    }
-#if DEBUG == BUBBLE_VERSION
+
+
+
+
+#endif
+
+#if RELEASE == BUBBLE_VERSION
     unsigned char *blk = NULL;
     // 内排序
     for (int idx = startBlock; idx <= endBlock; idx++) {

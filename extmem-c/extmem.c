@@ -162,9 +162,10 @@ int getNext(unsigned char *blk, int tupleId) {
     int addr = atoi(str);
     return addr;
 }
+
 void writeNext(unsigned char *blk, int tupleId, int addr) {
     char str[5];
-    sprintf(str,"%d",addr);
+    sprintf(str, "%d", addr);
     for (int k = 0; k < 4; k++) {
         *(blk + tupleId * 8 + k) = str[k];
     }
@@ -198,11 +199,13 @@ void mySort(unsigned char *blk) {
         }
     }
 }
-static void swap(int *a, int*b){
+
+static void swap(int *a, int *b) {
     int tmp = *a;
     *a = *b;
     *b = tmp;
 }
+
 void mergeTwoBlocks(unsigned char *blk1, unsigned char *blk2) {
     int i = 0, j = 0;
     while (i < 7) {
@@ -210,28 +213,64 @@ void mergeTwoBlocks(unsigned char *blk1, unsigned char *blk2) {
         getAttribute(blk1, i, &X1, &Y1);
         int X2 = -2, Y2 = -2;
         getAttribute(blk2, j, &X2, &Y2);
-        if(X1<=X2){
+        if (X1 <= X2) {
             // 小于，则加一
             i++;
-        }else{
+        } else {
             // 大于,就交换，然后重新排序 blk2
-            swap(&X1,&X2);
-            swap(&Y1,&Y2);
-            writeAttribute(blk1, i, X1,Y1);
-            writeAttribute(blk2, j, X2,Y2);
+            swap(&X1, &X2);
+            swap(&Y1, &Y2);
+            writeAttribute(blk1, i, X1, Y1);
+            writeAttribute(blk2, j, X2, Y2);
             mySort(blk2);
         }
     }
     // 此时，blk1 <= blk2
 }
 
-void printBlk(unsigned char *blk)
-{
+void printBlk(unsigned char *blk) {
     int X = -1;
     int Y = -1;
-    for (int j = 0; j < 7; j++)
-    {
+    for (int j = 0; j < 7; j++) {
         getAttribute(blk, j, &X, &Y);
         printf("(X=%d, Y=%d) \n", X, Y);
     }
+}
+
+int getSize(bufferInfo *bufCtl, int idx) {
+    return idx == bufCtl->nSet-1 ? bufCtl->lastSize : bufCtl->commonSize;
+}
+
+tuple getMin(bufferInfo *bufCtl) {
+    tuple ret;
+    ret.X = INT_MAX;
+    ret.Y = INT_MAX;
+    ret.blockIdx = -1;
+    ret.finish = 0;
+    int cnt = 0;
+#if RELEASE == TPMMS_VERSION
+    // printf(">>> blksize: %d\n",getSize(bufCtl, bufCtl->curGroup));
+#endif
+    int size = getSize(bufCtl, bufCtl->curGroup);
+    for (int i = 0; i < size; i++) {
+        int X = -1, Y = -1;
+        // 如果指针超过了最大的大小，则表示这个块已经被排序结束了
+        if (bufCtl->blkCnt[i] >= 7) {
+            cnt++;
+            continue;
+        }
+        getAttribute(bufCtl->blkPtrs[i], bufCtl->blkCnt[i], &X, &Y);
+        if(X == -1) continue;
+        if (X < ret.X) {
+            ret.blockIdx = i;
+            ret.X = X;
+            ret.Y = Y;
+        }
+    }
+    if(ret.blockIdx!=-1){
+        bufCtl->blkCnt[ret.blockIdx]++;
+    }
+    // 全部排序了吗
+    ret.finish = cnt == size ? 1 : 0;
+    return ret;
 }
