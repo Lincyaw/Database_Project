@@ -3,7 +3,7 @@
 //
 
 #include "2stageSort.h"
-int TPMMS(Buffer *buf, int startBlock, int endBlock) {
+int TPMMS1(Buffer *buf, int startBlock, int endBlock) {
 #if RELEASE == TPMMS_VERSION
     bufferInfo bufCtl;
     // 一共要排序多少个 blk

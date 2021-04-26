@@ -4,102 +4,11 @@
 
 #include "linearSearch.h"
 
-static int outputIndex = 3000;
 
 void selectTable(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock) {
     unsigned char *blk = NULL;
-    unsigned char *target = NULL;
-    int ptr = 0;
-    for (int idx = startBlock; idx <= endBlock; idx++) {
-        // 读一个块
-        if ((blk = readBlockFromDisk(idx, buf)) == NULL) {
-            perror("Reading Block Failed!\n");
-            return;
-        }
-        //一个blk存7个元组
-        for (int i = 0; i < 7; i++) {
-            int X = -2, Y = -2;
-            getAttribute(blk, i, &X, &Y);
-
-            if (X == -2 || Y == -2) {
-                perror("没有取到数");
-            }
-
-            // C 是否有效
-            if (valueC != -1) {
-                if (valueD != -1) {
-                    // 筛选两个
-                    if (valueC == X && valueD == Y) {
-                        // 维护一个指针, 指向target block, 作用是 write the tuple to the block
-                        // target 为空，则在内存中申请一个 block
-                        if (target == NULL) {
-                            target = getNewBlockInBuffer(buf);
-                        }
-                        // 申请到了，就做
-                        if (target != NULL) {
-                            writeAttribute(target, ptr, X, Y);
-                            ptr++;
-                            // ptr == 7 表示这个block写满了
-                            if (ptr == 7) {
-                                writeBlockToDisk(target, outputIndex++, buf);
-                                ptr = 0;
-                                target = NULL;
-                            }
-                        }
-                    }
-                } else {
-                    // 筛选 C
-                    if (valueC == X) {
-#ifdef DEBUG
-                        printf("X: %d, Y: %d\n", X, Y);
-#endif
-                        // 维护一个指针, 指向target block, 作用是 write the tuple to the block
-                        // target 为空，则在内存中申请一个 block
-                        if (target == NULL) {
-                            target = getNewBlockInBuffer(buf);
-                        }
-                        // 申请到了，就做
-                        if (target != NULL) {
-                            writeAttribute(target, ptr, X, Y);
-                            ptr++;
-                            // ptr == 7 表示这个block写满了
-                            if (ptr == 7) {
-                                writeBlockToDisk(target, outputIndex++, buf);
-                                ptr = 0;
-                                target = NULL;
-                            }
-                        }
-                    }
-                }
-            } else {
-                if (valueD != -1) {
-                    // 筛选D
-                    if (valueD == Y) {
-                        // 维护一个指针, 指向target block, 作用是 write the tuple to the block
-                        // target 为空，则在内存中申请一个 block
-                        if (target == NULL) {
-                            target = getNewBlockInBuffer(buf);
-                        }
-                        // 申请到了，就做
-                        if (target != NULL) {
-                            writeAttribute(target, ptr, X, Y);
-                            ptr++;
-                            // ptr == 7 表示这个block写满了
-                            if (ptr == 7) {
-                                writeBlockToDisk(target, outputIndex++, buf);
-                                ptr = 0;
-                                target = NULL;
-                            }
-                        }
-                    }
-                } else {
-                    // 都不筛选
-                }
-            }
-
-        }
-        freeBlockInBuffer(blk, buf);
-    }
+    int outputIndex = 300;
+    search(buf,valueC,valueD,startBlock,endBlock, outputIndex);
 }
 
 void generateIndex(Buffer *buf, int startBlock, int endBlock) {
@@ -121,11 +30,11 @@ void generateIndex(Buffer *buf, int startBlock, int endBlock) {
             }
             if (X % 10 == 0) {
                 if (flag) {
-                    printf("%d,%d\n", X, Y);
-                    writeAttribute(index, tuple++, X, Y);
+                    printf("%d,%d,%d\n", X, Y, i);
+                    writeAttribute(index, tuple++, X, i);
                     flag = 0;
                     if (tuple == 7 || i == endBlock - 1) {
-                        writeBlockToDisk(index, 4000 + blockIndex, buf);
+                        writeBlockToDisk(index, 4000 + blockIndex + startBlock, buf);
                         freeBlockInBuffer(index, buf);
                         index = getNewBlockInBuffer(buf);
                         blockIndex++;
@@ -139,6 +48,43 @@ void generateIndex(Buffer *buf, int startBlock, int endBlock) {
         }
         freeBlockInBuffer(blk, buf);
     }
-    writeBlockToDisk(index, 4000 + blockIndex, buf);
+    writeBlockToDisk(index, 4000 + blockIndex + startBlock, buf);
     freeBlockInBuffer(index, buf);
+}
+
+void idxSearch(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock) {
+    unsigned char *blk = NULL;
+    int start = -1, end = -1;
+    int index;
+    if (startBlock >= 3001 && startBlock <= 3016 && endBlock >= 3001 && endBlock <= 3016) {
+        index = 7001;
+    } else if (startBlock >= 3017 && startBlock <= 3048 && endBlock >= 3017 && endBlock <= 3048) {
+        index = 7017;
+    } else {
+        return;
+    }
+    blk = readBlockFromDisk(index++, buf);
+    while (start == -1 || end == -1) {
+        for (int i = 0; i < 7; i++) {
+            int X, Y;
+            getAttribute(blk, i, &X, &Y);
+            if (X <= valueC) {
+                start = Y;
+            }
+            if (X >= valueC) {
+                end = Y;
+            }
+            if (start != -1 && end != -1) {
+                break;
+            }
+        }
+        freeBlockInBuffer(blk, buf);
+        if (start != -1 && end != -1) {
+            break;
+        }
+        blk = readBlockFromDisk(index++, buf);
+    }
+
+    end = end > start ? end : start;
+    search(buf,valueC,valueD,start,end,5000);
 }

@@ -17,7 +17,7 @@
 #define BUBBLE_VERSION 0
 #define TPMMS_VERSION 1
 #define RELEASE TPMMS_VERSION
-//#define DEBUG TPMMS_VERSION
+#define DEBUG TPMMS_VERSION
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,4 +139,6 @@ tuple getMin(bufferInfo* bufCtl);
 
 
 tuple getMinV2(bufferInfo *bufCtl, Buffer* buf);
+
+void search(Buffer *buf, int valueC, int valueD, int start, int end, int outputIndex);
 #endif // EXTMEM_H

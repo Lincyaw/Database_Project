@@ -8,4 +8,6 @@ include_directories(.)
 add_executable(extmem_c
         extmem.c
         extmem.h
-        test.c linearSearch.c linearSearch.h 2stageSort.c 2stageSort.h)
+        template.c linearSearch.c linearSearch.h 2stageSort.c 2stageSort.h)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fexec-charset=GBK")
