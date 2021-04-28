@@ -14,14 +14,16 @@
 #define RELATION_R_END 16
 #define RELATION_S_BEGIN 17
 #define RELATION_S_END 48
+
 #define BUBBLE_VERSION 0
 #define TPMMS_VERSION 1
 #define RELEASE TPMMS_VERSION
-#define DEBUG TPMMS_VERSION
+//#define DEBUG TPMMS_VERSION
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 
 typedef struct tagBuffer {
     unsigned long numIO; /* Number of IO's*/
@@ -42,7 +44,7 @@ struct writeBlk {
 typedef struct bufferController {
     // 一共要排序多少个块
     int totalBlocks;
-    // 每个子集几个块
+    // 一般的子集有几个块
     int commonSize;
     // 最后一个子集几个块
     int lastSize;
@@ -61,9 +63,16 @@ typedef struct tuples {
     int X;
     int Y;
     int finish;
-}tuple;
+} tuple;
 
-int getSize(bufferInfo* bufCtl, int idx);
+/**
+ * 获取第idx个组有几个块
+ * @param bufCtl
+ * @param idx
+ * @return
+ */
+int getSize(bufferInfo *bufCtl, int idx);
+
 /* Initialize a buffer with the specified buffer size and block size.
  * If the initialization fails, the return value is NULL;
  * otherwise the pointer to the buffer.
@@ -107,7 +116,7 @@ void getAttribute(unsigned char *blk, int tupleId, int *x, int *y);
  */
 int getNext(unsigned char *blk);
 
-void writeNext(unsigned char *blk,int addr);
+void writeNext(unsigned char *blk, int addr);
 
 /**
  * 向对应的blk里写数据，不涉及磁盘
@@ -130,15 +139,24 @@ void mergeTwoBlocks(unsigned char *blk1, unsigned char *blk2);
 
 
 void printBlk(unsigned char *blk);
+
+
 /**
- * 在每一组的block中找到最小的那个数，并且把对应的那个组的指针+1
+ * 在每一组的block中找到最小的那个数，并且把对应的那个组的指针+1。如果指针到了那个block的末尾，
+ * 则尝试读取下一块，如果没有下一块，则将finish置为true，表示归并结束。
  * @param bufCtl
+ * @param buf
  * @return
  */
-tuple getMin(bufferInfo* bufCtl);
-
-
-tuple getMinV2(bufferInfo *bufCtl, Buffer* buf);
+tuple getMin(bufferInfo *bufCtl, Buffer *buf);
 
 void search(Buffer *buf, int valueC, int valueD, int start, int end, int outputIndex);
+
+void clearBlock(unsigned char *blk);
+
+int innerSort(Buffer *buf, bufferInfo *bufCtl, int startBlock, int endBlock);
+
+
+int sort(Buffer *buf, int startBlock, int endBlock);
+
 #endif // EXTMEM_H

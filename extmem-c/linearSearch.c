@@ -5,13 +5,20 @@
 #include "linearSearch.h"
 
 
-void selectTable(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock) {
+void linearSelect(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock) {
+    printf("-------------------------------------------------\n");
+    printf("基于线性搜索的选择算法 R.A = %d\n", valueC);
+    printf("-------------------------------------------------\n");
+
     unsigned char *blk = NULL;
     int outputIndex = 300;
     search(buf,valueC,valueD,startBlock,endBlock, outputIndex);
 }
 
 void generateIndex(Buffer *buf, int startBlock, int endBlock) {
+    printf("-------------------------------------------------\n");
+    printf("开始产生 block%d 到 block%d 的索引\n", startBlock, endBlock);
+    printf("-------------------------------------------------\n");
     unsigned char *index;
     index = getNewBlockInBuffer(buf);
 
@@ -30,11 +37,11 @@ void generateIndex(Buffer *buf, int startBlock, int endBlock) {
             }
             if (X % 10 == 0) {
                 if (flag) {
-                    printf("%d,%d,%d\n", X, Y, i);
+                    printf("X = %d, Y = %d, block = %d\n", X, Y, i);
                     writeAttribute(index, tuple++, X, i);
                     flag = 0;
                     if (tuple == 7 || i == endBlock - 1) {
-                        writeBlockToDisk(index, 4000 + blockIndex + startBlock, buf);
+                        writeBlockToDisk(index, 1000 + blockIndex + startBlock, buf);
                         freeBlockInBuffer(index, buf);
                         index = getNewBlockInBuffer(buf);
                         blockIndex++;
@@ -48,21 +55,25 @@ void generateIndex(Buffer *buf, int startBlock, int endBlock) {
         }
         freeBlockInBuffer(blk, buf);
     }
-    writeBlockToDisk(index, 4000 + blockIndex + startBlock, buf);
+    writeBlockToDisk(index, 1000 + blockIndex + startBlock, buf);
     freeBlockInBuffer(index, buf);
 }
 
 void idxSearch(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock) {
+    printf("-------------------------------------------------\n");
+    printf("开始对 block%d 到 block%d 之间的block进行基于索引的搜索算法，搜索的键值为%d\n", startBlock, endBlock,valueC);
+    printf("-------------------------------------------------\n");
     unsigned char *blk = NULL;
     int start = -1, end = -1;
     int index;
     if (startBlock >= 3001 && startBlock <= 3016 && endBlock >= 3001 && endBlock <= 3016) {
-        index = 7001;
+        index = 4001;
     } else if (startBlock >= 3017 && startBlock <= 3048 && endBlock >= 3017 && endBlock <= 3048) {
-        index = 7017;
+        index = 4017;
     } else {
         return;
     }
+    printf("读入索引块%d\n",index);
     blk = readBlockFromDisk(index++, buf);
     while (start == -1 || end == -1) {
         for (int i = 0; i < 7; i++) {
@@ -82,9 +93,12 @@ void idxSearch(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock
         if (start != -1 && end != -1) {
             break;
         }
+        printf("没找到，再次读入索引块%d\n",index);
         blk = readBlockFromDisk(index++, buf);
     }
 
     end = end > start ? end : start;
+    printf("确定了数据在%d块到%d块之间\n",start, end);
     search(buf,valueC,valueD,start,end,5000);
+    printf("结果写入第5000块\n");
 }
