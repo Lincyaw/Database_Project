@@ -74,6 +74,8 @@ int dropBlockOnDisk(unsigned int addr) {
 }
 
 unsigned char *readBlockFromDisk(unsigned int addr, Buffer *buf) {
+//    printf("读入数据块%d\n",addr);
+
     char filename[40];
     unsigned char *blkPtr, *bytePtr;
     char ch;
@@ -117,6 +119,7 @@ unsigned char *readBlockFromDisk(unsigned int addr, Buffer *buf) {
 }
 
 int writeBlockToDisk(unsigned char *blkPtr, unsigned int addr, Buffer *buf) {
+//    printf("写数据块%d\n",addr);
     char filename[40];
     unsigned char *bytePtr;
 
@@ -396,6 +399,7 @@ void search(Buffer *buf, int valueC, int valueD, int start, int end, int outputI
         freeBlockInBuffer(blk, buf);
     }
     if (ptr != 0) {
+        printf("结果写入磁盘%d\n", outputIndex);
         writeBlockToDisk(target, outputIndex++, buf);
         ptr = 0;
         target = NULL;

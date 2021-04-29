@@ -11,12 +11,12 @@ int main(int argc, char **argv) {
         perror("Buffer Initialization Failed!\n");
         return -1;
     }
-    linearSelect(&buf, 30, -1, 1, 16);
+    linearSelect(&buf, 50, -1, 17, 48);
     TPMMS(&buf, 1, 16);
     TPMMS(&buf, 17, 48);
     generateIndex(&buf, 3001, 3016);
     generateIndex(&buf, 3017, 3048);
-    idxSearch(&buf, 30, -1, 3001, 3016);
+    idxSearch(&buf, 50, -1, 3017, 3048);
     sortMergeJoin(&buf,1,16,17,48);
     intersection(&buf,1,16,17,48);
 //    printf("%lu\n", buf.numIO);

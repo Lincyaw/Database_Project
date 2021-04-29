@@ -362,6 +362,7 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
             if (bufCtl.blkCnt[1] == 7) {
                 freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
                 bufCtl.blkPtrs[1] = NULL;
+
                 bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
                 blkn = SStart + 3000;
                 SStart++;

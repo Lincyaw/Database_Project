@@ -7,7 +7,7 @@
 
 void linearSelect(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock) {
     printf("-------------------------------------------------\n");
-    printf("基于线性搜索的选择算法 R.A = %d\n", valueC);
+    printf("基于线性搜索的选择算法 key = %d, value = %d, from %d to %d\n", valueC, valueD, startBlock, endBlock);
     printf("-------------------------------------------------\n");
     unsigned long num = buf->numIO;
     unsigned char *blk = NULL;
@@ -76,7 +76,6 @@ void idxSearch(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock
     } else {
         return;
     }
-    printf("读入索引块%d\n",index);
     blk = readBlockFromDisk(index++, buf);
     while (start == -1 || end == -1) {
         for (int i = 0; i < 7; i++) {
