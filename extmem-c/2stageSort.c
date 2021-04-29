@@ -2,6 +2,7 @@
 // Created by llincyaw on 2021/4/25.
 //
 
+#include <string.h>
 #include "2stageSort.h"
 
 
@@ -179,82 +180,75 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     printf("-------------------------------------------------\n");
     printf("开始对 block%d~block%d 与 block%d~block%d基于排序的连接操作算法\n", RStart, REnd, SStart, SEnd);
     printf("-------------------------------------------------\n");
-//    sort(buf, RStart, REnd);
-//    sort(buf, SStart, SEnd);
+    sort(buf, RStart, REnd);
+    sort(buf, SStart, SEnd);
     bufferInfo bufCtl;
     bufCtl.blkPtrs[0] = readBlockFromDisk(RStart + 3000, buf);
     bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
     RStart++;
     SStart++;
     bufCtl.blkPtrs[2] = getNewBlockInBuffer(buf);
+
     bufCtl.blkCnt[0] = 0;
     bufCtl.blkCnt[1] = 0;
     bufCtl.blkCnt[2] = 0;
     int cnt = 1;
     int tmp = 0;
     int valid = 0;
-    int valid1 = 0;
     Same sameN;
-    while (RStart <= REnd && SStart <= SEnd) {
+    size_t *ptr = malloc(sizeof(unsigned char *));
+    while (RStart <= REnd+1 && SStart <= SEnd+1) {
         int Ra = -1, Rb = -1, Sc = -1, Sd = -1;
         getAttribute(bufCtl.blkPtrs[0], bufCtl.blkCnt[0], &Ra, &Rb);
         getAttribute(bufCtl.blkPtrs[1], bufCtl.blkCnt[1], &Sc, &Sd);
+
         if (Ra < Sc) {
-//            if(valid && !valid1){
-//                bufCtl.blkPtrs[1] = bufCtl.blkPtrs[3];
-//                bufCtl.blkCnt[1] = bufCtl.blkCnt[3];
-//                valid1 = 1;
-//                continue;
-//            }
+            if (valid) {
+                bufCtl.blkPtrs[1] = (unsigned char *) (*ptr);
+                bufCtl.blkCnt[1] = bufCtl.blkCnt[3];
+            }
             bufCtl.blkCnt[0]++;
             if (bufCtl.blkCnt[0] == 7) {
                 freeBlockInBuffer(bufCtl.blkPtrs[0], buf);
+                bufCtl.blkPtrs[0] = NULL;
                 bufCtl.blkPtrs[0] = readBlockFromDisk(RStart + 3000, buf);
                 RStart++;
                 bufCtl.blkCnt[0] = 0;
             }
         } else if (Ra > Sc) {
-//            if(valid && valid1){
-//                valid = 0;
-//                valid1 = 0;
-//            }
+            if (valid) {
+                valid = 0;
+            }
             bufCtl.blkCnt[1]++;
             if (bufCtl.blkCnt[1] == 7) {
                 freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
+                bufCtl.blkPtrs[1] = NULL;
                 bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
                 SStart++;
                 bufCtl.blkCnt[1] = 0;
             }
         } else {
-//            if (!valid && !valid1) {
-//                // 存下 s 开始的地方
-//                bufCtl.blkPtrs[3] = bufCtl.blkPtrs[1];
-//                bufCtl.blkCnt[3] = bufCtl.blkCnt[1];
-//                valid = 1;
-//            }
-//            if(valid && !valid1){
-//                bufCtl.blkCnt[1]++;
-//                if (bufCtl.blkCnt[1] == 7) {
-//                    freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
-//                    bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
-//                    SStart++;
-//                    bufCtl.blkCnt[1] = 0;
-//                }
-//            }else if(valid && valid1){
-//                bufCtl.blkCnt[0]++;
-//                if (bufCtl.blkCnt[0] == 7) {
-//                    freeBlockInBuffer(bufCtl.blkPtrs[0], buf);
-//                    bufCtl.blkPtrs[0] = readBlockFromDisk(RStart + 3000, buf);
-//                    RStart++;
-//                    bufCtl.blkCnt[0] = 0;
-//                }
-//            }
+            if (!valid) {
+                // 存下 s 开始的地方
+                ptr = &(bufCtl.blkPtrs[1]);
+                valid = 1;
+            }
+            bufCtl.blkCnt[1]++;
+            if (bufCtl.blkCnt[1] == 7) {
+                freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
+                bufCtl.blkPtrs[1] = NULL;
+                bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
+                SStart++;
+                bufCtl.blkCnt[1] = 0;
+            }
 
             printf("%d: Ra = %d, Rb = %d, Sc = %d, Sd = %d\n", tmp++, Ra, Rb, Sc, Sd);
             writeAttribute(bufCtl.blkPtrs[2], bufCtl.blkCnt[2]++, Ra, Rb);
             if (bufCtl.blkCnt[2] == 7) {
+                printf("结果写入磁盘%d\n", 5000 + cnt);
                 writeBlockToDisk(bufCtl.blkPtrs[2], 5000 + cnt, buf);
                 freeBlockInBuffer(bufCtl.blkPtrs[2], buf);
+                bufCtl.blkPtrs[2] = NULL;
                 bufCtl.blkPtrs[2] = getNewBlockInBuffer(buf);
                 bufCtl.blkCnt[2] = 0;
                 cnt++;
@@ -262,11 +256,121 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
             writeAttribute(bufCtl.blkPtrs[2], bufCtl.blkCnt[2]++, Sc, Sd);
             if (bufCtl.blkCnt[2] == 7) {
                 writeBlockToDisk(bufCtl.blkPtrs[2], 5000 + cnt, buf);
+                printf("结果写入磁盘%d\n", 5000 + cnt);
                 freeBlockInBuffer(bufCtl.blkPtrs[2], buf);
+                bufCtl.blkPtrs[2] = NULL;
                 bufCtl.blkPtrs[2] = getNewBlockInBuffer(buf);
                 bufCtl.blkCnt[2] = 0;
                 cnt++;
             }
         }
     }
+    if(bufCtl.blkCnt[2]!=0){
+        printf("结果写入磁盘%d\n", 5000 + cnt);
+        writeBlockToDisk(bufCtl.blkPtrs[2], 5000 + cnt, buf);
+        freeBlockInBuffer(bufCtl.blkPtrs[2], buf);
+    }
+    freeBlockInBuffer(bufCtl.blkPtrs[0], buf);
+    freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
+    free(ptr);
+    return 0;
 }
+
+int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
+    printf("-------------------------------------------------\n");
+    printf("开始对 block%d~block%d 与 block%d~block%d进行求交集\n", RStart, REnd, SStart, SEnd);
+    printf("-------------------------------------------------\n");
+    sort(buf, RStart, REnd);
+    sort(buf, SStart, SEnd);
+    bufferInfo bufCtl;
+    bufCtl.blkPtrs[0] = readBlockFromDisk(RStart + 3000, buf);
+    bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
+    RStart++;
+    SStart++;
+    bufCtl.blkPtrs[2] = getNewBlockInBuffer(buf);
+
+    bufCtl.blkCnt[0] = 0;
+    bufCtl.blkCnt[1] = 0;
+    bufCtl.blkCnt[2] = 0;
+    int cnt = 1;
+    int tmp = 1;
+    int valid = 0;
+    unsigned char **ptr;
+    while (RStart <= REnd+1 && SStart <= SEnd+1) {
+//        printf("RStart: %d, Sstart: %d\n",RStart, SStart);
+        int Ra = -1, Rb = -1, Sc = -1, Sd = -1;
+        getAttribute(bufCtl.blkPtrs[0], bufCtl.blkCnt[0], &Ra, &Rb);
+        getAttribute(bufCtl.blkPtrs[1], bufCtl.blkCnt[1], &Sc, &Sd);
+//        printf("cnt: %d\n",bufCtl.blkCnt[0]);
+        if(Ra==48 || Ra == 47){
+            printf(">>>--- Ra = %d, Rb = %d, Sc = %d, Sd = %d\n", Ra, Rb, Sc, Sd);
+        }
+        if (Ra < Sc) {
+            if (valid) {
+                bufCtl.blkPtrs[1] = (*ptr);
+                bufCtl.blkCnt[1] = 0;
+            }
+            bufCtl.blkCnt[0]++;
+            if (bufCtl.blkCnt[0] == 7) {
+                freeBlockInBuffer(bufCtl.blkPtrs[0], buf);
+                bufCtl.blkPtrs[0] = NULL;
+                bufCtl.blkPtrs[0] = readBlockFromDisk(RStart + 3000, buf);
+                RStart++;
+                bufCtl.blkCnt[0] = 0;
+            }
+        } else if (Ra > Sc) {
+            if (valid) {
+                valid = 0;
+            }
+            bufCtl.blkCnt[1]++;
+            if (bufCtl.blkCnt[1] == 7) {
+                freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
+                bufCtl.blkPtrs[1] = NULL;
+                bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
+                SStart++;
+                bufCtl.blkCnt[1] = 0;
+            }
+        } else {
+            if (!valid) {
+                // 存下 s 开始的地方
+                ptr = &bufCtl.blkPtrs[1];
+                valid = 1;
+            }
+            bufCtl.blkCnt[1]++;
+            if (bufCtl.blkCnt[1] == 7) {
+                freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
+                bufCtl.blkPtrs[1] = NULL;
+                bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
+                SStart++;
+                bufCtl.blkCnt[1] = 0;
+            }
+
+            if (Rb != Sd) {
+                continue;
+            }
+            printf("%d: Ra = %d, Rb = %d, Sc = %d, Sd = %d\n", tmp++, Ra, Rb, Sc, Sd);
+
+            writeAttribute(bufCtl.blkPtrs[2], bufCtl.blkCnt[2]++, Ra, Rb);
+            if (bufCtl.blkCnt[2] == 7) {
+                printf("结果写入磁盘%d\n", 6000 + cnt);
+                writeBlockToDisk(bufCtl.blkPtrs[2], 6000 + cnt, buf);
+                freeBlockInBuffer(bufCtl.blkPtrs[2], buf);
+                bufCtl.blkPtrs[2] = NULL;
+                bufCtl.blkPtrs[2] = getNewBlockInBuffer(buf);
+                bufCtl.blkCnt[2] = 0;
+                cnt++;
+            }
+        }
+    }
+
+    if(bufCtl.blkCnt[2]!=0){
+        printf("结果写入磁盘%d\n", 6000 + cnt);
+        writeBlockToDisk(bufCtl.blkPtrs[2], 6000 + cnt, buf);
+        freeBlockInBuffer(bufCtl.blkPtrs[2], buf);
+    }
+    freeBlockInBuffer(bufCtl.blkPtrs[0], buf);
+    freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
+//    free(ptr);
+    return 0;
+}
+
