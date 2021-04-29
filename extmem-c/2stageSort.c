@@ -197,7 +197,7 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     int valid = 0;
     Same sameN;
     size_t *ptr = malloc(sizeof(unsigned char *));
-    while (RStart <= REnd+1 && SStart <= SEnd+1) {
+    while (RStart <= REnd + 1 && SStart <= SEnd + 1) {
         int Ra = -1, Rb = -1, Sc = -1, Sd = -1;
         getAttribute(bufCtl.blkPtrs[0], bufCtl.blkCnt[0], &Ra, &Rb);
         getAttribute(bufCtl.blkPtrs[1], bufCtl.blkCnt[1], &Sc, &Sd);
@@ -265,7 +265,7 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
             }
         }
     }
-    if(bufCtl.blkCnt[2]!=0){
+    if (bufCtl.blkCnt[2] != 0) {
         printf("结果写入磁盘%d\n", 5000 + cnt);
         writeBlockToDisk(bufCtl.blkPtrs[2], 5000 + cnt, buf);
         freeBlockInBuffer(bufCtl.blkPtrs[2], buf);
@@ -283,6 +283,11 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     sort(buf, RStart, REnd);
     sort(buf, SStart, SEnd);
     bufferInfo bufCtl;
+    Same sLog;
+    sLog.startBlock = SStart + 3000;
+    sLog.startTuple = 0;
+    sLog.valid = 0;
+
     bufCtl.blkPtrs[0] = readBlockFromDisk(RStart + 3000, buf);
     bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
     RStart++;
@@ -296,19 +301,22 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     int tmp = 1;
     int valid = 0;
     unsigned char **ptr;
-    while (RStart <= REnd+1 && SStart <= SEnd+1) {
+    while (RStart <= REnd + 1 && SStart <= SEnd + 1) {
 //        printf("RStart: %d, Sstart: %d\n",RStart, SStart);
         int Ra = -1, Rb = -1, Sc = -1, Sd = -1;
         getAttribute(bufCtl.blkPtrs[0], bufCtl.blkCnt[0], &Ra, &Rb);
         getAttribute(bufCtl.blkPtrs[1], bufCtl.blkCnt[1], &Sc, &Sd);
 //        printf("cnt: %d\n",bufCtl.blkCnt[0]);
-        if(Ra==48 || Ra == 47){
+//        if (Ra == 48 || Ra == 47) {
             printf(">>>--- Ra = %d, Rb = %d, Sc = %d, Sd = %d\n", Ra, Rb, Sc, Sd);
-        }
+//        }
         if (Ra < Sc) {
-            if (valid) {
-                bufCtl.blkPtrs[1] = (*ptr);
-                bufCtl.blkCnt[1] = 0;
+            if (valid && sLog.valid) {
+                printf("切换到初始位,%d, %d\n", sLog.startBlock, sLog.startTuple);
+                freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
+                bufCtl.blkPtrs[1] = NULL;
+                bufCtl.blkPtrs[1] = readBlockFromDisk(sLog.startBlock, buf);
+                bufCtl.blkCnt[1] = sLog.startTuple;
             }
             bufCtl.blkCnt[0]++;
             if (bufCtl.blkCnt[0] == 7) {
@@ -327,13 +335,18 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
                 freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
                 bufCtl.blkPtrs[1] = NULL;
                 bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
+                sLog.startBlock = SStart + 3000;
+//                sLog.valid = 0;
                 SStart++;
                 bufCtl.blkCnt[1] = 0;
             }
         } else {
             if (!valid) {
                 // 存下 s 开始的地方
-                ptr = &bufCtl.blkPtrs[1];
+//                ptr = &bufCtl.blkPtrs[1];
+                printf("记录了位置 %d, %d\n",sLog.startBlock, sLog.startTuple);
+                sLog.startTuple = bufCtl.blkCnt[1];
+                sLog.valid = 1;
                 valid = 1;
             }
             bufCtl.blkCnt[1]++;
@@ -341,6 +354,9 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
                 freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
                 bufCtl.blkPtrs[1] = NULL;
                 bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
+                sLog.startBlock = SStart + 3000;
+//                sLog.valid = 0;
+
                 SStart++;
                 bufCtl.blkCnt[1] = 0;
             }
@@ -363,7 +379,7 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
         }
     }
 
-    if(bufCtl.blkCnt[2]!=0){
+    if (bufCtl.blkCnt[2] != 0) {
         printf("结果写入磁盘%d\n", 6000 + cnt);
         writeBlockToDisk(bufCtl.blkPtrs[2], 6000 + cnt, buf);
         freeBlockInBuffer(bufCtl.blkPtrs[2], buf);
