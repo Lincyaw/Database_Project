@@ -9,10 +9,11 @@ void linearSelect(Buffer *buf, int valueC, int valueD, int startBlock, int endBl
     printf("-------------------------------------------------\n");
     printf("基于线性搜索的选择算法 R.A = %d\n", valueC);
     printf("-------------------------------------------------\n");
-
+    unsigned long num = buf->numIO;
     unsigned char *blk = NULL;
     int outputIndex = 300;
     search(buf,valueC,valueD,startBlock,endBlock, outputIndex);
+    printf("IO次数为%lu\n", buf->numIO-num);
 }
 
 void generateIndex(Buffer *buf, int startBlock, int endBlock) {
@@ -63,6 +64,8 @@ void idxSearch(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock
     printf("-------------------------------------------------\n");
     printf("开始对 block%d 到 block%d 之间的block进行基于索引的搜索算法，搜索的键值为%d\n", startBlock, endBlock,valueC);
     printf("-------------------------------------------------\n");
+    unsigned long num = buf->numIO;
+
     unsigned char *blk = NULL;
     int start = -1, end = -1;
     int index;
@@ -101,4 +104,6 @@ void idxSearch(Buffer *buf, int valueC, int valueD, int startBlock, int endBlock
     printf("确定了数据在%d块到%d块之间\n",start, end);
     search(buf,valueC,valueD,start,end,5000);
     printf("结果写入第5000块\n");
+    printf("IO次数为%lu\n", buf->numIO-num);
+
 }

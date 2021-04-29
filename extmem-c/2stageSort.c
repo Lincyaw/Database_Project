@@ -2,7 +2,6 @@
 // Created by llincyaw on 2021/4/25.
 //
 
-#include <string.h>
 #include "2stageSort.h"
 
 
@@ -173,7 +172,6 @@ int TPMMS(Buffer *buf, int startBlock, int endBlock) {
 typedef struct same {
     int startBlock;
     int startTuple;
-    int valid;
 } Same;
 
 int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
@@ -183,6 +181,10 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     sort(buf, RStart, REnd);
     sort(buf, SStart, SEnd);
     bufferInfo bufCtl;
+    Same sLog;
+    int blkn = SStart + 3000;
+    sLog.startBlock = SStart + 3000;
+    sLog.startTuple = 0;
     bufCtl.blkPtrs[0] = readBlockFromDisk(RStart + 3000, buf);
     bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
     RStart++;
@@ -195,8 +197,6 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     int cnt = 1;
     int tmp = 0;
     int valid = 0;
-    Same sameN;
-    size_t *ptr = malloc(sizeof(unsigned char *));
     while (RStart <= REnd + 1 && SStart <= SEnd + 1) {
         int Ra = -1, Rb = -1, Sc = -1, Sd = -1;
         getAttribute(bufCtl.blkPtrs[0], bufCtl.blkCnt[0], &Ra, &Rb);
@@ -204,8 +204,11 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
 
         if (Ra < Sc) {
             if (valid) {
-                bufCtl.blkPtrs[1] = (unsigned char *) (*ptr);
-                bufCtl.blkCnt[1] = bufCtl.blkCnt[3];
+                freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
+                bufCtl.blkPtrs[1] = NULL;
+                bufCtl.blkPtrs[1] = readBlockFromDisk(sLog.startBlock, buf);
+                bufCtl.blkCnt[1] = sLog.startTuple;
+                SStart = sLog.startBlock - 3000+1;
             }
             bufCtl.blkCnt[0]++;
             if (bufCtl.blkCnt[0] == 7) {
@@ -224,13 +227,18 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
                 freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
                 bufCtl.blkPtrs[1] = NULL;
                 bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
+                blkn = SStart + 3000;
                 SStart++;
                 bufCtl.blkCnt[1] = 0;
             }
         } else {
             if (!valid) {
                 // 存下 s 开始的地方
-                ptr = &(bufCtl.blkPtrs[1]);
+                sLog.startBlock = blkn;
+                sLog.startTuple = bufCtl.blkCnt[1];
+#ifdef  DEBUG
+                printf("记录了位置 %d, %d\n", sLog.startBlock, sLog.startTuple);
+#endif
                 valid = 1;
             }
             bufCtl.blkCnt[1]++;
@@ -238,11 +246,12 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
                 freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
                 bufCtl.blkPtrs[1] = NULL;
                 bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
+                blkn = SStart + 3000;
                 SStart++;
                 bufCtl.blkCnt[1] = 0;
             }
 
-            printf("%d: Ra = %d, Rb = %d, Sc = %d, Sd = %d\n", tmp++, Ra, Rb, Sc, Sd);
+//            printf("%d: Ra = %d, Rb = %d, Sc = %d, Sd = %d\n", tmp++, Ra, Rb, Sc, Sd);
             writeAttribute(bufCtl.blkPtrs[2], bufCtl.blkCnt[2]++, Ra, Rb);
             if (bufCtl.blkCnt[2] == 7) {
                 printf("结果写入磁盘%d\n", 5000 + cnt);
@@ -272,7 +281,6 @@ int sortMergeJoin(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     }
     freeBlockInBuffer(bufCtl.blkPtrs[0], buf);
     freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
-    free(ptr);
     return 0;
 }
 
@@ -280,13 +288,13 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     printf("-------------------------------------------------\n");
     printf("开始对 block%d~block%d 与 block%d~block%d进行求交集\n", RStart, REnd, SStart, SEnd);
     printf("-------------------------------------------------\n");
-    sort(buf, RStart, REnd);
-    sort(buf, SStart, SEnd);
+//    sort(buf, RStart, REnd);
+//    sort(buf, SStart, SEnd);
     bufferInfo bufCtl;
     Same sLog;
+    int blkn = SStart + 3000;
     sLog.startBlock = SStart + 3000;
     sLog.startTuple = 0;
-    sLog.valid = 0;
 
     bufCtl.blkPtrs[0] = readBlockFromDisk(RStart + 3000, buf);
     bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
@@ -300,23 +308,24 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     int cnt = 1;
     int tmp = 1;
     int valid = 0;
-    unsigned char **ptr;
+
     while (RStart <= REnd + 1 && SStart <= SEnd + 1) {
-//        printf("RStart: %d, Sstart: %d\n",RStart, SStart);
         int Ra = -1, Rb = -1, Sc = -1, Sd = -1;
         getAttribute(bufCtl.blkPtrs[0], bufCtl.blkCnt[0], &Ra, &Rb);
         getAttribute(bufCtl.blkPtrs[1], bufCtl.blkCnt[1], &Sc, &Sd);
-//        printf("cnt: %d\n",bufCtl.blkCnt[0]);
-//        if (Ra == 48 || Ra == 47) {
-            printf(">>>--- Ra = %d, Rb = %d, Sc = %d, Sd = %d\n", Ra, Rb, Sc, Sd);
-//        }
+#ifdef DEBUG
+        printf(">>>--- Ra = %d, Rb = %d, Sc = %d, Sd = %d\n", Ra, Rb, Sc, Sd);
+#endif
         if (Ra < Sc) {
-            if (valid && sLog.valid) {
+            if (valid) {
+#ifdef DEBUG
                 printf("切换到初始位,%d, %d\n", sLog.startBlock, sLog.startTuple);
+#endif
                 freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
                 bufCtl.blkPtrs[1] = NULL;
                 bufCtl.blkPtrs[1] = readBlockFromDisk(sLog.startBlock, buf);
                 bufCtl.blkCnt[1] = sLog.startTuple;
+                SStart = sLog.startBlock - 3000+1;
             }
             bufCtl.blkCnt[0]++;
             if (bufCtl.blkCnt[0] == 7) {
@@ -335,18 +344,18 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
                 freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
                 bufCtl.blkPtrs[1] = NULL;
                 bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
-                sLog.startBlock = SStart + 3000;
-//                sLog.valid = 0;
+                blkn = SStart + 3000;
                 SStart++;
                 bufCtl.blkCnt[1] = 0;
             }
         } else {
             if (!valid) {
                 // 存下 s 开始的地方
-//                ptr = &bufCtl.blkPtrs[1];
-                printf("记录了位置 %d, %d\n",sLog.startBlock, sLog.startTuple);
+                sLog.startBlock = blkn;
                 sLog.startTuple = bufCtl.blkCnt[1];
-                sLog.valid = 1;
+#ifdef  DEBUG
+                printf("记录了位置 %d, %d\n", sLog.startBlock, sLog.startTuple);
+#endif
                 valid = 1;
             }
             bufCtl.blkCnt[1]++;
@@ -354,9 +363,7 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
                 freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
                 bufCtl.blkPtrs[1] = NULL;
                 bufCtl.blkPtrs[1] = readBlockFromDisk(SStart + 3000, buf);
-                sLog.startBlock = SStart + 3000;
-//                sLog.valid = 0;
-
+                blkn = SStart + 3000;
                 SStart++;
                 bufCtl.blkCnt[1] = 0;
             }
@@ -386,7 +393,6 @@ int intersection(Buffer *buf, int RStart, int REnd, int SStart, int SEnd) {
     }
     freeBlockInBuffer(bufCtl.blkPtrs[0], buf);
     freeBlockInBuffer(bufCtl.blkPtrs[1], buf);
-//    free(ptr);
     return 0;
 }
 
